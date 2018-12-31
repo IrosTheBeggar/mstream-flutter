@@ -7,8 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'package:audio_service/audio_service.dart';
-
 import 'player_widget.dart';
 
 typedef void OnError(Exception exception);
