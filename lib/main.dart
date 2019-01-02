@@ -4,15 +4,26 @@ import 'dart:io';
 import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-
+import 'dart:convert';
 import 'player_widget.dart';
+import 'package:path/path.dart' as path;
 
 typedef void OnError(Exception exception);
 
 const kUrl1 = 'http://www.rxlabz.com/labz/audio.mp3';
 const kUrl2 = 'http://www.rxlabz.com/labz/audio2.mp3';
+String  actionText = "Default";
+
+var queueList = [];
+var serverList = [];
+var currentServer = {
+  'url': 'https://demo.mstream.io/',
+  'username': '',
+  'jwt': '',
+  'password': ''
+};
 
 void main() {
   runApp(new MaterialApp(home: new ExampleApp()));
@@ -27,9 +38,10 @@ class _ExampleAppState extends State<ExampleApp> {
   AudioCache audioCache = new AudioCache();
   AudioPlayer advancedPlayer = new AudioPlayer();
   String localFilePath;
+  List displayList = new List();
 
   Future _loadFile() async {
-    final bytes = await readBytes(kUrl1);
+    final bytes = await http.readBytes(kUrl1);
     final dir = await getApplicationDocumentsDirectory();
     final file = new File('${dir.path}/audio.mp3');
 
@@ -44,7 +56,7 @@ class _ExampleAppState extends State<ExampleApp> {
   Widget _tab(List<Widget> children) {
     return Center(
       child: Container(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(0.0),
         child: Column(
           children: children
               .map((w) => Container(child: w, padding: EdgeInsets.all(6.0)))
@@ -60,37 +72,48 @@ class _ExampleAppState extends State<ExampleApp> {
         child: RaisedButton(child: Text(txt), onPressed: onPressed));
   }
 
-  Widget remoteUrl() {
-    return _tab([
-      Text('Sample 1 ($kUrl1)'),
-      PlayerWidget(url: kUrl1),
-      Text('Sample 2 ($kUrl2)'),
-      PlayerWidget(url: kUrl2),
-    ]);
-  }
-
+  // Loal File Screen
   Widget localFile() {
-    return _tab([
-      Text('File: $kUrl1'),
-      _btn('Download File to your Device', () => _loadFile()),
-      Text('Current local file path: $localFilePath'),
-      localFilePath == null
-          ? Container()
-          : PlayerWidget(url: localFilePath, isLocal: true),
-    ]);
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics (),
+      itemCount: displayList.length,
+      itemBuilder: (BuildContext context, int index) {
+        print('XXX');
+        print(displayList[index]);
+        return new ListTile(
+          title: Text(displayList[index]['name'].toString()),
+          onTap: () {
+            print(displayList[index]['directory']);
+            if(displayList[index]['type'] == 'directory') {
+              getFileList(displayList[index]['directory']);
+            }
+          },
+        );
+      }
+    );
   }
 
-  Widget localAsset() {
-    return _tab([
-      Text('Play Local Asset \'audio.mp3\':'),
-      _btn('Play', () => audioCache.play('audio.mp3')),
-      Text('Loop Local Asset \'audio.mp3\':'),
-      _btn('Loop', () => audioCache.loop('audio.mp3')),
-      Text('Play Local Asset \'audio2.mp3\':'),
-      _btn('Play', () => audioCache.play('audio2.mp3')),
-    ]);
+  Future<void> getFileList(String directory) async {
+    var url = "https://demo.mstream.io/dirparser";
+    var response = await http.post(url, body: {"dir": directory});
+    print("Response status: ${response.statusCode}");
+    print("Response body: ${response.body}");
+    var res = jsonDecode(response.body);
+    print(res['contents']);
+    displayList.clear();
+    res['contents'].forEach((e) {
+      print(e);
+      setState(() {
+        displayList.add({
+          'type': e['type'],
+          'name': e['name'],
+          'directory': path.join(res['path'], e['name'])
+        });
+      });
+    });
   }
 
+  // Advanced Screen
   Widget advanced() {
     return _tab([
       Column(children: [
@@ -127,7 +150,23 @@ class _ExampleAppState extends State<ExampleApp> {
           _btn('release', () => advancedPlayer.release()),
         ], mainAxisAlignment: MainAxisAlignment.spaceEvenly),
       ]),
+      // End of Advanced Player
+
+      // // Other Examples
+      // Text('Play Local Asset \'audio.mp3\':'),
+      // _btn('Play', () => audioCache.play('audio.mp3')),
+      // Text('File: $kUrl1'),
+      // _btn('Download File to your Device', () => _loadFile()),
+      // // Text('Current local file path: $localFilePath'),
+      // localFilePath == null
+      //     ? Container()
+      //     : PlayerWidget(url: localFilePath, isLocal: true),
     ]);
+  }
+
+  @override
+  void initState() {
+    getFileList("");
   }
 
   @override
@@ -138,16 +177,63 @@ class _ExampleAppState extends State<ExampleApp> {
         appBar: AppBar(
           bottom: TabBar(
             tabs: [
-              Tab(text: 'Remote Url'),
               Tab(text: 'Local File'),
-              Tab(text: 'Local Asset'),
               Tab(text: 'Advanced'),
             ],
           ),
-          title: Text('audioplayers Example'),
+          title: Text('mStream'),
+          actions: <Widget> [
+            new IconButton (
+              icon: new Icon(Icons.add_comment),
+              onPressed: (){
+                setState(() {
+                  actionText = "New Text";
+                });
+              }
+            ),
+            new IconButton (
+              icon: new Icon(Icons.remove),
+              onPressed: (){
+                setState(() {
+                  actionText = "Default";
+                });
+              }
+            ),
+          ]
+        ),
+        drawer: new Drawer(
+          child: new ListView(
+            children: <Widget> [
+              new DrawerHeader(child: new Text('Header'),),
+              new ListTile(
+                title: new Text('File Explorer'),
+                onTap: () {
+                  getFileList("");
+                  Navigator.of(context).pop();
+                },
+              ),
+              new ListTile(
+                title: new Text('Playlists'),
+                onTap: () {},
+              ),
+              new ListTile(
+                title: new Text('Albums'),
+                onTap: () {},
+              ),
+              new ListTile(
+                title: new Text('Artists'),
+                onTap: () {},
+              ),
+              new Divider(),
+              new ListTile(
+                title: new Text('About'),
+                onTap: () {},
+              ),
+            ],
+          )
         ),
         body: TabBarView(
-          children: [remoteUrl(), localFile(), localAsset(), advanced()],
+          children: [localFile(), advanced()],
         ),
       ),
     );
