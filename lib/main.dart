@@ -40,6 +40,8 @@ class _ExampleAppState extends State<ExampleApp> {
   String localFilePath;
   List displayList = new List();
 
+  String tabText = 'File Explorer';
+
   Future _loadFile() async {
     final bytes = await http.readBytes(kUrl1);
     final dir = await getApplicationDocumentsDirectory();
@@ -109,6 +111,10 @@ class _ExampleAppState extends State<ExampleApp> {
   }
 
   Future<void> getFileList(String directory) async {
+    setState(() {
+      tabText = 'File Explorer';
+    });
+
     var url = "https://demo.mstream.io/dirparser";
     var response = await http.post(url, body: {"dir": directory});
     print("Response status: ${response.statusCode}");
@@ -123,6 +129,26 @@ class _ExampleAppState extends State<ExampleApp> {
           'type': e['type'],
           'name': e['name'],
           'directory': path.join(res['path'], e['name'])
+        });
+      });
+    });
+  }
+
+  Future<void> getPlaylists() async {
+    setState(() {
+      tabText = 'Playlists';
+    });
+
+    var url = "https://demo.mstream.io/playlist/getall";
+    var response = await http.get(url);
+    var res = jsonDecode(response.body);
+    displayList.clear();
+    res.forEach((e) {
+      print(e);
+      setState(() {
+        displayList.add({
+          'type': 'playlist',
+          'name': e['name']
         });
       });
     });
@@ -192,7 +218,7 @@ class _ExampleAppState extends State<ExampleApp> {
         appBar: AppBar(
           bottom: TabBar(
             tabs: [
-              Tab(text: 'Local File'),
+              Tab(text: tabText),
               Tab(text: 'Now Playing'),
             ],
           ),
@@ -229,7 +255,10 @@ class _ExampleAppState extends State<ExampleApp> {
               ),
               new ListTile(
                 title: new Text('Playlists'),
-                onTap: () {},
+                onTap: () {
+                  getPlaylists();
+                  Navigator.of(context).pop();
+                },
               ),
               new ListTile(
                 title: new Text('Albums'),
