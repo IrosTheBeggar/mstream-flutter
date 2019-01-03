@@ -74,23 +74,38 @@ class _ExampleAppState extends State<ExampleApp> {
 
   // Loal File Screen
   Widget localFile() {
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics (),
-      itemCount: displayList.length,
-      itemBuilder: (BuildContext context, int index) {
-        print('XXX');
-        print(displayList[index]);
-        return new ListTile(
-          title: Text(displayList[index]['name'].toString()),
-          onTap: () {
-            print(displayList[index]['directory']);
-            if(displayList[index]['type'] == 'directory') {
-              getFileList(displayList[index]['directory']);
+    return new Column(children: <Widget>[
+      new Row(children: <Widget>[
+        new IconButton(icon: Icon(Icons.arrow_back), tooltip: 'Go Back', onPressed: () {
+          print('BACK');
+        }),
+        Expanded(child: TextField(decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: 'Search'
+        )))
+      ]),
+      Expanded(
+        child: SizedBox(
+          child: new ListView.builder( // LOL Holy Shit: https://stackoverflow.com/questions/52801201/flutter-renderbox-was-not-laid-out
+            physics: const AlwaysScrollableScrollPhysics (),
+            itemCount: displayList.length,
+            itemBuilder: (BuildContext context, int index) {
+              print('XXX');
+              print(displayList[index]);
+              return new ListTile(
+                title: Text(displayList[index]['name'].toString()),
+                onTap: () {
+                  print(displayList[index]['directory']);
+                  if(displayList[index]['type'] == 'directory') {
+                    getFileList(displayList[index]['directory']);
+                  }
+                },
+              );
             }
-          },
-        );
-      }
-    );
+          )
+        )
+      )
+    ]);
   }
 
   Future<void> getFileList(String directory) async {
@@ -178,7 +193,7 @@ class _ExampleAppState extends State<ExampleApp> {
           bottom: TabBar(
             tabs: [
               Tab(text: 'Local File'),
-              Tab(text: 'Advanced'),
+              Tab(text: 'Now Playing'),
             ],
           ),
           title: Text('mStream'),
