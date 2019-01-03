@@ -14,10 +14,10 @@ typedef void OnError(Exception exception);
 
 const kUrl1 = 'http://www.rxlabz.com/labz/audio.mp3';
 const kUrl2 = 'http://www.rxlabz.com/labz/audio2.mp3';
-String  actionText = "Default";
 
-var queueList = [];
-var serverList = [];
+// var queueList = [];
+
+List serverList = new List();
 var currentServer = {
   'url': 'https://demo.mstream.io/',
   'username': '',
@@ -38,8 +38,8 @@ class _ExampleAppState extends State<ExampleApp> {
   AudioCache audioCache = new AudioCache();
   AudioPlayer advancedPlayer = new AudioPlayer();
   String localFilePath;
-  List displayList = new List();
 
+  List displayList = new List();
   String tabText = 'File Explorer';
 
   Future _loadFile() async {
@@ -115,7 +115,7 @@ class _ExampleAppState extends State<ExampleApp> {
       tabText = 'File Explorer';
     });
 
-    var url = "https://demo.mstream.io/dirparser";
+    var url = currentServer['url'] + 'dirparser';
     var response = await http.post(url, body: {"dir": directory});
     print("Response status: ${response.statusCode}");
     print("Response body: ${response.body}");
@@ -139,7 +139,7 @@ class _ExampleAppState extends State<ExampleApp> {
       tabText = 'Playlists';
     });
 
-    var url = "https://demo.mstream.io/playlist/getall";
+    var url = currentServer['url'] + 'playlist/getall';
     var response = await http.get(url);
     var res = jsonDecode(response.body);
     displayList.clear();
@@ -207,6 +207,7 @@ class _ExampleAppState extends State<ExampleApp> {
 
   @override
   void initState() {
+    serverList.add(currentServer);
     getFileList("");
   }
 
@@ -224,20 +225,33 @@ class _ExampleAppState extends State<ExampleApp> {
           ),
           title: Text('mStream'),
           actions: <Widget> [
-            new IconButton (
-              icon: new Icon(Icons.add_comment),
-              onPressed: (){
-                setState(() {
-                  actionText = "New Text";
-                });
-              }
+            new DropdownButtonHideUnderline(
+              child: DropdownButton(
+                hint: Padding(
+                  padding: EdgeInsets.only(left: 44.0),
+                  child: new Icon(Icons.add_comment),
+                ),
+                onChanged: (newVal) {
+                  print(newVal);
+                },
+                items: serverList.map((server) {
+                  return new DropdownMenuItem(
+                    value: 'user',
+                    child: new Text(
+                      'user.name',
+                      style: new TextStyle(color: Colors.black),
+                    ),
+                  );
+                }).toList()
+              )
             ),
             new IconButton (
-              icon: new Icon(Icons.remove),
+              icon: new Icon(Icons.add),
               onPressed: (){
-                setState(() {
-                  actionText = "Default";
-                });
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SecondScreen()),
+                );
               }
             ),
           ]
@@ -278,6 +292,25 @@ class _ExampleAppState extends State<ExampleApp> {
         ),
         body: TabBarView(
           children: [localFile(), advanced()],
+        ),
+      ),
+    );
+  }
+}
+
+class SecondScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Add Server"),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Go back!'),
         ),
       ),
     );
