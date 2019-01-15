@@ -14,6 +14,7 @@ typedef void OnError(Exception exception);
 
 const kUrl1 = 'http://www.rxlabz.com/labz/audio.mp3';
 const kUrl2 = 'http://www.rxlabz.com/labz/audio2.mp3';
+String tabText = 'File Explorer';
 
 // var queueList = [];
 
@@ -34,13 +35,14 @@ class ExampleApp extends StatefulWidget {
   _ExampleAppState createState() => new _ExampleAppState();
 }
 
-class _ExampleAppState extends State<ExampleApp> {
+class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateMixin {
   AudioCache audioCache = new AudioCache();
   AudioPlayer advancedPlayer = new AudioPlayer();
   String localFilePath;
 
+  TabController _tabController;
+
   List displayList = new List();
-  String tabText = 'File Explorer';
 
   Future _loadFile() async {
     final bytes = await http.readBytes(kUrl1);
@@ -207,92 +209,101 @@ class _ExampleAppState extends State<ExampleApp> {
 
   @override
   void initState() {
+    super.initState();
+    _tabController = new TabController(vsync: this, length: 2);
     serverList.add(currentServer);
     getFileList("");
   }
 
+  // @override
+  // void dispose() {
+  //   _tabController.dispose();
+  //   super.dispose();
+  // }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          bottom: TabBar(
-            tabs: [
-              Tab(text: tabText),
-              Tab(text: 'Now Playing'),
-            ],
-          ),
-          title: Text('mStream'),
-          actions: <Widget> [
-            new DropdownButtonHideUnderline(
-              child: DropdownButton(
-                hint: Padding(
-                  padding: EdgeInsets.only(left: 44.0),
-                  child: new Icon(Icons.add_comment),
-                ),
-                onChanged: (newVal) {
-                  print(newVal);
-                },
-                items: serverList.map((server) {
-                  return new DropdownMenuItem(
-                    value: 'user',
-                    child: new Text(
-                      'user.name',
-                      style: new TextStyle(color: Colors.black),
-                    ),
-                  );
-                }).toList()
-              )
-            ),
-            new IconButton (
-              icon: new Icon(Icons.add),
-              onPressed: (){
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SecondScreen()),
+    return Scaffold(
+      appBar: AppBar(
+        bottom: TabBar(
+          tabs: [
+            Tab(text: tabText),
+            Tab(text: 'Now Playing'),
+          ],
+          controller: _tabController,
+        ),
+        title: Text('mStream'),
+        actions: <Widget> [
+          new DropdownButtonHideUnderline(
+            child: DropdownButton(
+              hint: Padding(
+                padding: EdgeInsets.only(left: 44.0),
+                child: new Icon(Icons.add_comment),
+              ),
+              onChanged: (newVal) {
+                print(newVal);
+              },
+              items: serverList.map((server) {
+                return new DropdownMenuItem(
+                  value: 'user',
+                  child: new Text(
+                    'user.name',
+                    style: new TextStyle(color: Colors.black),
+                  ),
                 );
-              }
+              }).toList()
+            )
+          ),
+          new IconButton (
+            icon: new Icon(Icons.add),
+            onPressed: (){
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SecondScreen()),
+              );
+            }
+          ),
+        ]
+      ),
+      drawer: new Drawer(
+        child: new ListView(
+          children: <Widget> [
+            new DrawerHeader(child: new Text('Header'),),
+            new ListTile(
+              title: new Text('File Explorer'),
+              onTap: () {
+                getFileList("");
+                Navigator.of(context).pop();
+                _tabController.animateTo(0);
+              },
             ),
-          ]
-        ),
-        drawer: new Drawer(
-          child: new ListView(
-            children: <Widget> [
-              new DrawerHeader(child: new Text('Header'),),
-              new ListTile(
-                title: new Text('File Explorer'),
-                onTap: () {
-                  getFileList("");
-                  Navigator.of(context).pop();
-                },
-              ),
-              new ListTile(
-                title: new Text('Playlists'),
-                onTap: () {
-                  getPlaylists();
-                  Navigator.of(context).pop();
-                },
-              ),
-              new ListTile(
-                title: new Text('Albums'),
-                onTap: () {},
-              ),
-              new ListTile(
-                title: new Text('Artists'),
-                onTap: () {},
-              ),
-              new Divider(),
-              new ListTile(
-                title: new Text('About'),
-                onTap: () {},
-              ),
-            ],
-          )
-        ),
-        body: TabBarView(
-          children: [localFile(), advanced()],
-        ),
+            new ListTile(
+              title: new Text('Playlists'),
+              onTap: () {
+                getPlaylists();
+                Navigator.of(context).pop();
+                _tabController.animateTo(0);
+              },
+            ),
+            new ListTile(
+              title: new Text('Albums'),
+              onTap: () {},
+            ),
+            new ListTile(
+              title: new Text('Artists'),
+              onTap: () {},
+            ),
+            new Divider(),
+            new ListTile(
+              title: new Text('About'),
+              onTap: () {},
+            ),
+          ],
+        )
+      ),
+      body: TabBarView(
+        children: [localFile(), advanced()],
+        controller: _tabController
       ),
     );
   }
