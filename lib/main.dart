@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'player_widget.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path/path.dart' as path;
 
 typedef void OnError(Exception exception);
@@ -23,7 +24,9 @@ var currentServer = {
   'url': 'https://demo.mstream.io/',
   'username': '',
   'jwt': '',
-  'password': ''
+  'password': '',
+  'nickname': 'Main Server',
+  'localname': 'main'
 };
 
 void main() {
@@ -213,16 +216,60 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     _tabController = new TabController(vsync: this, length: 2);
     serverList.add(currentServer);
     getFileList("");
+
+    // TODO: 
+    FlutterDownloader.registerCallback((id, status, progress) {
+      print('Download task ($id) is in status ($status) and process ($progress)');
+    });
   }
 
-  // @override
-  // void dispose() {
-  //   _tabController.dispose();
-  //   super.dispose();
-  // }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    FlutterDownloader.registerCallback(null);
+    super.dispose();
+  }
+
+  // Sync Functions
+  Future downloadOneFile(String serverDir, String downloadUrl) async {
+    serverDir = currentServer['localname']; // TODO: delete this later
+    // download each file relative to its path
+
+    final bytes = await http.readBytes(downloadUrl);
+    final dir = await getApplicationDocumentsDirectory();
+    final file = new File('${dir.path}/${serverDir}/$downloadUrl');
+
+    await file.writeAsBytes(bytes);
+  }
+
+  Future downloadOneFile2(String serverDir, String downloadUrl) async {
+    serverDir = currentServer['localname']; // TODO: delete this later
+    // download each file relative to its path
+
+    final dir = await getApplicationDocumentsDirectory();
+    final taskId = await FlutterDownloader.enqueue(
+      url: downloadUrl,
+      savedDir: '${dir.path}/${serverDir}/$downloadUrl',
+      showNotification: false, // show download progress in status bar (for Android)
+      openFileFromNotification: false, // click on notification to open downloaded file (for Android)
+    );
+
+    FlutterDownloader.registerCallback((id, status, progress) {
+      // code to update your UI
+    });
+  }
+
+  void syncPlaylist() {
+    // TODO: Do this one next
+  }
+
+  void syncDirectory() {
+    // 
+  }
 
   @override
   Widget build(BuildContext context) {
+    // TODO: Add a status bar to side menu.  Use it to display available space
     return Scaffold(
       appBar: AppBar(
         bottom: TabBar(
@@ -238,7 +285,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             child: DropdownButton(
               hint: Padding(
                 padding: EdgeInsets.only(left: 44.0),
-                child: new Icon(Icons.add_comment),
+                child: new Icon(Icons.cloud),
               ),
               onChanged: (newVal) {
                 print(newVal);
@@ -259,7 +306,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             onPressed: (){
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => SecondScreen()),
+                MaterialPageRoute(builder: (context) => AddServerScreen()),
               );
             }
           ),
@@ -293,6 +340,17 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               title: new Text('Artists'),
               onTap: () {},
             ),
+            new ListTile(
+              title: new Text('Local Files'),
+              onTap: () {},
+            ),
+            new ListTile(
+              title: new Text('Add Server'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
+              },
+            ),
             new Divider(),
             new ListTile(
               title: new Text('About'),
@@ -309,21 +367,124 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   }
 }
 
-class SecondScreen extends StatelessWidget {
+// Create a Form Widget
+class MyCustomForm extends StatefulWidget {
+  @override
+  MyCustomFormState createState() {
+    return MyCustomFormState();
+  }
+}
+
+// Create a corresponding State class. This class will hold the data related to
+// the form.
+class MyCustomFormState extends State<MyCustomForm> {
+  // Create a global key that will uniquely identify the Form widget and allow
+  // us to validate the form
+  // Note: This is a GlobalKey<FormState>, not a GlobalKey<MyCustomFormState>!
+  final _formKey = GlobalKey<FormState>();
+  var _url;
+
+  checkServer(String url) async {
+    try {
+      var response = await http.get(url);
+      print(response);
+    } catch(err) {
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text('Could not parse URL')));
+      return;
+    }
+
+
+    // TODO: Check response
+    // Save
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Build a Form widget using the _formKey we created above
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          TextFormField(
+            validator: (value) {
+              if (value.isEmpty) {
+                return 'Server URL is necessary';
+              }
+            },
+            keyboardType: TextInputType.emailAddress,
+            decoration: new InputDecoration(
+              hintText: 'https://mstream.io',
+              labelText: 'Server URL'
+            ),
+            onSaved: (String value) {
+              print('rthrtrth');
+              this._url = value;
+            }
+          ),
+          TextFormField(
+            validator: (value) {
+
+            },
+            keyboardType: TextInputType.emailAddress,
+            decoration: new InputDecoration(
+              hintText: 'Username',
+              labelText: 'Username'
+            )
+          ),
+          TextFormField(
+            validator: (value) {
+
+            },
+            obscureText: true, // Use secure text for passwords.
+            decoration: new InputDecoration(
+              hintText: 'Password',
+              labelText: 'Password'
+            )
+          ),
+          TextFormField(
+            validator: (value) {
+
+            },
+            keyboardType: TextInputType.emailAddress,
+            decoration: new InputDecoration(
+              hintText: 'Server Name',
+              labelText: 'Server Name'
+            )
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: RaisedButton(
+              onPressed: () {
+                // Validate will return true if the form is valid, or false if
+                // the form is invalid.
+                if (!_formKey.currentState.validate()) {
+                  return;
+                }
+
+                _formKey.currentState.save(); // Save our form now.
+
+                // Ping server
+                print(this._url);
+                checkServer(this._url);
+              },
+              child: Text('Submit'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AddServerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Add Server"),
       ),
-      body: Center(
-        child: RaisedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Go back!'),
-        ),
-      ),
+      body: MyCustomForm()
     );
   }
 }
