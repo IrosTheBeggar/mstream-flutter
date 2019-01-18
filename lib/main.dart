@@ -8,6 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'player_widget.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'server.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path/path.dart' as path;
 
@@ -19,15 +21,25 @@ String tabText = 'File Explorer';
 
 // var queueList = [];
 
-List serverList = new List();
-var currentServer = {
-  'url': 'https://demo.mstream.io/',
-  'username': '',
-  'jwt': '',
-  'password': '',
-  'nickname': 'Main Server',
-  'localname': 'main'
-};
+List<Server> serverList = new List();
+int currentServer = -1;
+
+Future<String> get _localPath async {
+  final directory = await getApplicationDocumentsDirectory();
+  return directory.path;
+}
+
+Future<File> get _serverFile async {
+  final path = await _localPath;
+  return File('$path/servers.json');
+}
+
+Future<File> writeServerFile() async {
+  final file = await _serverFile;
+
+  // Write the file
+  return file.writeAsString(jsonEncode(serverList));
+}
 
 void main() {
   runApp(new MaterialApp(home: new ExampleApp()));
@@ -106,6 +118,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   if(displayList[index]['type'] == 'directory') {
                     getFileList(displayList[index]['directory']);
                   }
+
+                  if(displayList[index]['type'] == 'addServer') {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
+                  }
                 },
               );
             }
@@ -120,8 +136,34 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       tabText = 'File Explorer';
     });
 
-    var url = currentServer['url'] + 'dirparser';
-    var response = await http.post(url, body: {"dir": directory});
+    if (currentServer < 0) {
+      Fluttertoast.showToast(
+        msg: "No Server Selected",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 2,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;      
+    }
+
+    Uri currentUri = Uri.parse(serverList[currentServer].url);
+    String url = currentUri.resolve('/dirparser').toString();
+    var response = await http.post(url, body: {"dir": directory},  headers: { 'x-access-token': serverList[currentServer].jwt});
+
+    if (response.statusCode > 299) {
+      Fluttertoast.showToast(
+        msg: "Call Failed",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;   
+    }
+
     print("Response status: ${response.statusCode}");
     print("Response body: ${response.body}");
     var res = jsonDecode(response.body);
@@ -144,8 +186,35 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       tabText = 'Playlists';
     });
 
-    var url = currentServer['url'] + 'playlist/getall';
-    var response = await http.get(url);
+    if (currentServer < 0) {
+      Fluttertoast.showToast(
+        msg: "No Server Selected",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;      
+    }
+
+    Uri currentUri = Uri.parse(serverList[currentServer].url);
+    String url = currentUri.resolve('/playlist/getall').toString();
+    print(serverList[currentServer].jwt);
+    var response = await http.get(url, headers: { 'x-access-token': serverList[currentServer].jwt});
+
+    if (response.statusCode > 299) {
+      Fluttertoast.showToast(
+        msg: "Call Failed",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 2,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;   
+    }
+
     var res = jsonDecode(response.body);
     displayList.clear();
     res.forEach((e) {
@@ -210,18 +279,65 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     ]);
   }
 
+  Future<List>  readServerList() async {
+    try {
+      final file = await _serverFile;
+
+      // Read the file
+      String contents = await file.readAsString();
+      return jsonDecode(contents);
+    } catch (e) {
+      // If we encounter an error, return 0
+      return [];
+    }
+  }
+
+
   @override
   void initState() {
     super.initState();
     _tabController = new TabController(vsync: this, length: 2);
-    serverList.add(currentServer);
-    getFileList("");
 
-    // TODO: 
+    // Load Servers
+    readServerList().then((List contents) {
+      print(contents);
+      // contents = []; // TODO: Remove thus later
+      contents.forEach((f) {
+        print(f);
+        var newServer = Server.fromJson(f);
+        serverList.add(newServer);
+      });
+
+      print(serverList);
+
+      if (serverList.length > 0) {
+        currentServer = 0;
+      } else {
+        // Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
+        setState(() {
+          displayList.add({
+            'type': 'addServer',
+            'name': 'Welcome To mStream!'
+          });
+          displayList.add({
+            'type': 'addServer',
+            'name': 'Click here to add a server'
+          });
+        });
+      }
+
+      print(currentServer);
+
+    });
+
+    // getFileList("");
+
     FlutterDownloader.registerCallback((id, status, progress) {
+      // TODO: Handle downlaod state
       print('Download task ($id) is in status ($status) and process ($progress)');
     });
   }
+
 
   @override
   void dispose() {
@@ -232,7 +348,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
   // Sync Functions
   Future downloadOneFile(String serverDir, String downloadUrl) async {
-    serverDir = currentServer['localname']; // TODO: delete this later
+    serverDir = serverList[currentServer].localname; // TODO: delete this later
     // download each file relative to its path
 
     final bytes = await http.readBytes(downloadUrl);
@@ -243,7 +359,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   }
 
   Future downloadOneFile2(String serverDir, String downloadUrl) async {
-    serverDir = currentServer['localname']; // TODO: delete this later
+    serverDir = serverList[currentServer].localname; // TODO: delete this later
     // download each file relative to its path
 
     final dir = await getApplicationDocumentsDirectory();
@@ -293,10 +409,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               items: serverList.map((server) {
                 return new DropdownMenuItem(
                   value: 'user',
-                  child: new Text(
-                    'user.name',
-                    style: new TextStyle(color: Colors.black),
-                  ),
+                  child: new Text(server.nickname.length > 0 ? server.nickname : server.url, style: new TextStyle(color: Colors.black)),
                 );
               }).toList()
             )
@@ -383,19 +496,60 @@ class MyCustomFormState extends State<MyCustomForm> {
   // Note: This is a GlobalKey<FormState>, not a GlobalKey<MyCustomFormState>!
   final _formKey = GlobalKey<FormState>();
   var _url;
+  var _username;
+  var _password;
+  var _serverName;
 
-  checkServer(String url) async {
+  checkServer() async {
+    Uri lol = Uri.parse(this._url);
+    String origin = lol.origin;
+    var response;
+
     try {
-      var response = await http.get(url);
+      response = await http.get(lol.resolve('/ping').toString());
       print(response);
     } catch(err) {
-      Scaffold.of(context).showSnackBar(SnackBar(content: Text('Could not parse URL')));
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text('Could not connect to server')));
       return;
     }
 
+    // Check for login
+    if (response.statusCode == 200) {
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text('Connection Successful!')));
+      saveServer(origin);
+      return;
+    }
 
-    // TODO: Check response
+    // Try logging in
+    try {
+      response = await http.post(lol.resolve('/login').toString(), body: {"username": this._username, "password": this._password});
+      print(response);
+    } catch(err) {
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text('Failed to Login')));
+      return;
+    }
+
+    if (response.statusCode != 200) {
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text('Failed to Login')));
+      return;    
+    }
+
+    var res = jsonDecode(response.body);
+    
     // Save
+    saveServer(origin, res['token']);
+  }
+
+  saveServer(String origin, [String jwt='']) {
+    Server woo = new Server(origin, this._serverName, this._username, this._password, jwt, this._serverName);
+    serverList.add(woo);
+    
+    currentServer = serverList.length - 1;
+
+    // Save Server List
+    writeServerFile();
+
+    print(serverList);
   }
 
   @override
@@ -408,9 +562,30 @@ class MyCustomFormState extends State<MyCustomForm> {
         children: <Widget>[
           TextFormField(
             validator: (value) {
+
+            },
+            keyboardType: TextInputType.emailAddress,
+            decoration: new InputDecoration(
+              hintText: 'Server Name',
+              labelText: 'Server Name'
+            ),
+            onSaved: (String value) {
+              this._serverName = value;
+            }
+          ),
+          TextFormField(
+            validator: (value) {
               if (value.isEmpty) {
-                return 'Server URL is necessary';
+                return 'Server URL is needed';
               }
+              try {
+                var lol = Uri.parse(value);
+                if (lol.origin is Error || lol.origin.length < 1) {
+                  return 'Cannot Parse URL';
+                }
+              } catch(err) {
+                return 'Cannot Parse URL';
+              }              
             },
             keyboardType: TextInputType.emailAddress,
             decoration: new InputDecoration(
@@ -418,7 +593,6 @@ class MyCustomFormState extends State<MyCustomForm> {
               labelText: 'Server URL'
             ),
             onSaved: (String value) {
-              print('rthrtrth');
               this._url = value;
             }
           ),
@@ -430,7 +604,10 @@ class MyCustomFormState extends State<MyCustomForm> {
             decoration: new InputDecoration(
               hintText: 'Username',
               labelText: 'Username'
-            )
+            ),
+            onSaved: (String value) {
+              this._username = value;
+            }
           ),
           TextFormField(
             validator: (value) {
@@ -440,17 +617,10 @@ class MyCustomFormState extends State<MyCustomForm> {
             decoration: new InputDecoration(
               hintText: 'Password',
               labelText: 'Password'
-            )
-          ),
-          TextFormField(
-            validator: (value) {
-
-            },
-            keyboardType: TextInputType.emailAddress,
-            decoration: new InputDecoration(
-              hintText: 'Server Name',
-              labelText: 'Server Name'
-            )
+            ),
+            onSaved: (String value) {
+              this._password = value;
+            }
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -466,7 +636,7 @@ class MyCustomFormState extends State<MyCustomForm> {
 
                 // Ping server
                 print(this._url);
-                checkServer(this._url);
+                checkServer();
               },
               child: Text('Submit'),
             ),
