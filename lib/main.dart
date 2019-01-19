@@ -301,11 +301,13 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     // Load Servers
     readServerList().then((List contents) {
       print(contents);
-      // contents = []; // TODO: Remove thus later
+      // contents = []; // TODO: Remove this later
       contents.forEach((f) {
         print(f);
         var newServer = Server.fromJson(f);
-        serverList.add(newServer);
+        setState(() {
+          serverList.add(newServer);
+        });
       });
 
       print(serverList);
@@ -395,7 +397,25 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           ],
           controller: _tabController,
         ),
-        title: Text('mStream'),
+        // title: Text('mStream'),
+        title: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'mStream',
+            ),
+            Visibility(
+              visible: currentServer < 0 ? false : true,
+              child: Text(
+                currentServer < 0 ? '' : (serverList[currentServer].nickname.length > 0 ? serverList[currentServer].nickname: serverList[currentServer].url),
+                style: TextStyle(
+                  fontSize: 12.0,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: <Widget> [
           new DropdownButtonHideUnderline(
             child: DropdownButton(
@@ -404,11 +424,13 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 child: new Icon(Icons.cloud),
               ),
               onChanged: (newVal) {
-                print(newVal);
+                setState(() {
+                  currentServer = serverList.indexOf(newVal);             
+                });
               },
               items: serverList.map((server) {
                 return new DropdownMenuItem(
-                  value: 'user',
+                  value: server,
                   child: new Text(server.nickname.length > 0 ? server.nickname : server.url, style: new TextStyle(color: Colors.black)),
                 );
               }).toList()
@@ -548,6 +570,7 @@ class MyCustomFormState extends State<MyCustomForm> {
 
     // Save Server List
     writeServerFile();
+    Navigator.pop(context);
 
     print(serverList);
   }
