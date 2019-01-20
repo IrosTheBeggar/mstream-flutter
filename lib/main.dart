@@ -417,24 +417,21 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           ],
         ),
         actions: <Widget> [
-          new DropdownButtonHideUnderline(
-            child: DropdownButton(
-              hint: Padding(
-                padding: EdgeInsets.only(left: 44.0),
-                child: new Icon(Icons.cloud),
-              ),
-              onChanged: (newVal) {
-                setState(() {
-                  currentServer = serverList.indexOf(newVal);             
-                });
-              },
-              items: serverList.map((server) {
-                return new DropdownMenuItem(
+          new PopupMenuButton(
+            onSelected: (Server selectedServer) { 
+              setState(() {
+                currentServer = serverList.indexOf(selectedServer);             
+              });
+            },
+            icon: new Icon(Icons.cloud),
+            itemBuilder: (BuildContext context) { 
+              return serverList.map((server) {
+                return new PopupMenuItem(
                   value: server,
                   child: new Text(server.nickname.length > 0 ? server.nickname : server.url, style: new TextStyle(color: Colors.black)),
                 );
-              }).toList()
-            )
+              }).toList();
+            },
           ),
           new IconButton (
             icon: new Icon(Icons.add),
