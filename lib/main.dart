@@ -575,93 +575,105 @@ class MyCustomFormState extends State<MyCustomForm> {
   @override
   Widget build(BuildContext context) {
     // Build a Form widget using the _formKey we created above
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          TextFormField(
-            validator: (value) {
+    return new Container(
+      padding: new EdgeInsets.all(20.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            TextFormField(
+              validator: (value) {
 
-            },
-            keyboardType: TextInputType.emailAddress,
-            decoration: new InputDecoration(
-              hintText: 'Server Name',
-              labelText: 'Server Name'
-            ),
-            onSaved: (String value) {
-              this._serverName = value;
-            }
-          ),
-          TextFormField(
-            validator: (value) {
-              if (value.isEmpty) {
-                return 'Server URL is needed';
-              }
-              try {
-                var lol = Uri.parse(value);
-                if (lol.origin is Error || lol.origin.length < 1) {
-                  return 'Cannot Parse URL';
-                }
-              } catch(err) {
-                return 'Cannot Parse URL';
-              }              
-            },
-            keyboardType: TextInputType.emailAddress,
-            decoration: new InputDecoration(
-              hintText: 'https://mstream.io',
-              labelText: 'Server URL'
-            ),
-            onSaved: (String value) {
-              this._url = value;
-            }
-          ),
-          TextFormField(
-            validator: (value) {
-
-            },
-            keyboardType: TextInputType.emailAddress,
-            decoration: new InputDecoration(
-              hintText: 'Username',
-              labelText: 'Username'
-            ),
-            onSaved: (String value) {
-              this._username = value;
-            }
-          ),
-          TextFormField(
-            validator: (value) {
-
-            },
-            obscureText: true, // Use secure text for passwords.
-            decoration: new InputDecoration(
-              hintText: 'Password',
-              labelText: 'Password'
-            ),
-            onSaved: (String value) {
-              this._password = value;
-            }
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: RaisedButton(
-              onPressed: () {
-                // Validate will return true if the form is valid, or false if
-                // the form is invalid.
-                if (!_formKey.currentState.validate()) {
-                  return;
-                }
-
-                _formKey.currentState.save(); // Save our form now.
-
-                // Ping server
-                print(this._url);
-                checkServer();
               },
-              child: Text('Submit'),
+              keyboardType: TextInputType.emailAddress,
+              decoration: new InputDecoration(
+                hintText: 'Server Name',
+                labelText: 'Server Name'
+              ),
+              onSaved: (String value) {
+                this._serverName = value;
+              }
             ),
-          ),
-        ],
+            TextFormField(
+              validator: (value) {
+                if (value.isEmpty) {
+                  return 'Server URL is needed';
+                }
+                try {
+                  var lol = Uri.parse(value);
+                  if (lol.origin is Error || lol.origin.length < 1) {
+                    return 'Cannot Parse URL';
+                  }
+                } catch(err) {
+                  return 'Cannot Parse URL';
+                }              
+              },
+              keyboardType: TextInputType.emailAddress,
+              decoration: new InputDecoration(
+                hintText: 'https://mstream.io',
+                labelText: 'Server URL'
+              ),
+              onSaved: (String value) {
+                this._url = value;
+              }
+            ),
+            TextFormField(
+              validator: (value) {
+
+              },
+              keyboardType: TextInputType.emailAddress,
+              decoration: new InputDecoration(
+                hintText: 'Username',
+                labelText: 'Username'
+              ),
+              onSaved: (String value) {
+                this._username = value;
+              }
+            ),
+            TextFormField(
+              validator: (value) {
+
+              },
+              obscureText: true, // Use secure text for passwords.
+              decoration: new InputDecoration(
+                hintText: 'Password',
+                labelText: 'Password'
+              ),
+              onSaved: (String value) {
+                this._password = value;
+              }
+            ),
+            new Container(
+              width: MediaQuery.of(context).size.width,
+              child: new RaisedButton(
+                child: new Text(
+                  'Save',
+                  style: new TextStyle(
+                    color: Colors.white
+                  ),
+                ),
+                onPressed: () {
+                  // Validate will return true if the form is valid, or false if
+                  // the form is invalid.
+                  if (!_formKey.currentState.validate()) {
+                    return;
+                  }
+
+                  _formKey.currentState.save(); // Save our form now.
+
+                  // Ping server
+                  print(this._url);
+                  checkServer();
+                },
+                color: Colors.blue,
+              ),
+              margin: new EdgeInsets.only(
+                top: 20.0
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
