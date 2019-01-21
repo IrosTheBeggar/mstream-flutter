@@ -7,9 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
-import 'player_widget.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'server.dart';
+import 'display_item.dart';
+
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path/path.dart' as path;
 
@@ -18,8 +19,6 @@ typedef void OnError(Exception exception);
 const kUrl1 = 'http://www.rxlabz.com/labz/audio.mp3';
 const kUrl2 = 'http://www.rxlabz.com/labz/audio2.mp3';
 String tabText = 'File Explorer';
-
-// var queueList = [];
 
 List<Server> serverList = new List();
 int currentServer = -1;
@@ -57,20 +56,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
   TabController _tabController;
 
-  List displayList = new List();
+  List<DisplayItem> displayList = new List();
 
-  Future _loadFile() async {
-    final bytes = await http.readBytes(kUrl1);
-    final dir = await getApplicationDocumentsDirectory();
-    final file = new File('${dir.path}/audio.mp3');
-
-    await file.writeAsBytes(bytes);
-    if (await file.exists()) {
-      setState(() {
-        localFilePath = file.path;
-      });
-    }
-  }
 
   Widget _tab(List<Widget> children) {
     return Center(
@@ -109,17 +96,17 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             physics: const AlwaysScrollableScrollPhysics (),
             itemCount: displayList.length,
             itemBuilder: (BuildContext context, int index) {
-              print('XXX');
               print(displayList[index]);
               return new ListTile(
-                title: Text(displayList[index]['name'].toString()),
+                leading: displayList[index].icon == null ? null : displayList[index].icon,
+                title: Text(displayList[index].name),
+                subtitle: displayList[index].subtext == null ? null : Text(displayList[index].subtext),
                 onTap: () {
-                  print(displayList[index]['directory']);
-                  if(displayList[index]['type'] == 'directory') {
-                    getFileList(displayList[index]['directory']);
+                  if(displayList[index].type == 'directory') {
+                    getFileList(displayList[index].data);
                   }
 
-                  if(displayList[index]['type'] == 'addServer') {
+                  if(displayList[index].type == 'addServer') {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
                   }
                 },
@@ -171,12 +158,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     res['contents'].forEach((e) {
       print(e);
+      Icon thisIcon = e['type'] == 'directory' ? Icon(Icons.folder) : Icon(Icons.music_note);
       setState(() {
-        displayList.add({
-          'type': e['type'],
-          'name': e['name'],
-          'directory': path.join(res['path'], e['name'])
-        });
+        displayList.add(
+          new DisplayItem(e['name'], e['type'], path.join(res['path'], e['name']), thisIcon, null)
+        );
       });
     });
   }
@@ -220,10 +206,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     res.forEach((e) {
       print(e);
       setState(() {
-        displayList.add({
-          'type': 'playlist',
-          'name': e['name']
-        });
+        displayList.add(
+          new DisplayItem(e['name'], 'playlist', e['name'], Icon(Icons.queue_music), null)
+        );
       });
     });
   }
@@ -265,17 +250,6 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           _btn('release', () => advancedPlayer.release()),
         ], mainAxisAlignment: MainAxisAlignment.spaceEvenly),
       ]),
-      // End of Advanced Player
-
-      // // Other Examples
-      // Text('Play Local Asset \'audio.mp3\':'),
-      // _btn('Play', () => audioCache.play('audio.mp3')),
-      // Text('File: $kUrl1'),
-      // _btn('Download File to your Device', () => _loadFile()),
-      // // Text('Current local file path: $localFilePath'),
-      // localFilePath == null
-      //     ? Container()
-      //     : PlayerWidget(url: localFilePath, isLocal: true),
     ]);
   }
 
@@ -314,25 +288,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
       if (serverList.length > 0) {
         currentServer = 0;
+        getFileList("");
       } else {
         // Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
         setState(() {
-          displayList.add({
-            'type': 'addServer',
-            'name': 'Welcome To mStream!'
-          });
-          displayList.add({
-            'type': 'addServer',
-            'name': 'Click here to add a server'
-          });
+          displayList.add(
+            new DisplayItem('Welcome To mStream', 'addServer', '', Icon(Icons.library_add), 'Click here to add server')
+          );
         });
       }
 
       print(currentServer);
-
     });
-
-    // getFileList("");
 
     FlutterDownloader.registerCallback((id, status, progress) {
       // TODO: Handle downlaod state
@@ -447,8 +414,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       drawer: new Drawer(
         child: new ListView(
           children: <Widget> [
-            new DrawerHeader(child: new Text('Header'),),
+            new DrawerHeader(
+              child: new Image(image: AssetImage('graphics/mstream-logo.png')),
+            ),
             new ListTile(
+              leading: new Icon(Icons.folder),
               title: new Text('File Explorer'),
               onTap: () {
                 getFileList("");
@@ -458,6 +428,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             ),
             new ListTile(
               title: new Text('Playlists'),
+              leading: new Icon(Icons.queue_music),
               onTap: () {
                 getPlaylists();
                 Navigator.of(context).pop();
@@ -466,18 +437,22 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             ),
             new ListTile(
               title: new Text('Albums'),
+              leading: new Icon(Icons.album),
               onTap: () {},
             ),
             new ListTile(
               title: new Text('Artists'),
+              leading: new Icon(Icons.library_music),
               onTap: () {},
             ),
             new ListTile(
               title: new Text('Local Files'),
+              leading: new Icon(Icons.folder_open),
               onTap: () {},
             ),
             new ListTile(
               title: new Text('Add Server'),
+              leading: new Icon(Icons.add_to_queue),
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
@@ -485,7 +460,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             ),
             new Divider(),
             new ListTile(
-              title: new Text('About'),
+              title: new Text('About mStream'),
+              leading: new Icon(Icons.equalizer),
               onTap: () {},
             ),
           ],
