@@ -23,13 +23,9 @@ String tabText = 'File Explorer';
 List<Server> serverList = new List();
 int currentServer = -1;
 
-Future<String> get _localPath async {
-  final directory = await getApplicationDocumentsDirectory();
-  return directory.path;
-}
-
 Future<File> get _serverFile async {
-  final path = await _localPath;
+  final directory = await getApplicationDocumentsDirectory();
+  final path = directory.path;
   return File('$path/servers.json');
 }
 
@@ -57,6 +53,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   TabController _tabController;
 
   List<DisplayItem> displayList = new List();
+  
+  List<List<DisplayItem>> displayCache = new List();
 
 
   Widget _tab(List<Widget> children) {
@@ -403,10 +401,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           new IconButton (
             icon: new Icon(Icons.add),
             onPressed: (){
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddServerScreen()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()));
             }
           ),
         ]
@@ -462,7 +457,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             new ListTile(
               title: new Text('About mStream'),
               leading: new Icon(Icons.equalizer),
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.push(context, MaterialPageRoute(builder: (context) => AboutScreen()));
+              },
             ),
           ],
         )
@@ -663,6 +661,28 @@ class AddServerScreen extends StatelessWidget {
         title: Text("Add Server"),
       ),
       body: MyCustomForm()
+    );
+  }
+}
+
+
+class AboutScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("About"),
+      ),
+      body: new Container(
+        padding: new EdgeInsets.all(40.0),
+        child: new ListView(
+          children: [
+            new Image(image: AssetImage('graphics/mstream-logo.png')),
+            new Text('mStream Mobile v0.1'),
+            new Text('Alpha Edition'),
+          ]
+        )
+      )
     );
   }
 }
