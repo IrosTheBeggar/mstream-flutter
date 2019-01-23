@@ -8,8 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'server.dart';
-import 'display_item.dart';
+import 'objects/server.dart';
+import 'objects/display_item.dart';
 
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path/path.dart' as path;

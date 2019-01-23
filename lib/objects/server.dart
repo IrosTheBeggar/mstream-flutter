@@ -1,10 +1,10 @@
 class Server {
-  final String url;
-  final String nickname;
-  final String username;
-  final String password;
-  final String jwt;
-  final String localname;
+  String url;
+  String nickname;
+  String username;
+  String password;
+  String jwt;
+  String localname;
 
   Server(this.url, this.nickname, this.username, this.password, this.jwt, this.localname);
 
