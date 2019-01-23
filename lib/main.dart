@@ -362,21 +362,16 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           ],
           controller: _tabController,
         ),
-        // title: Text('mStream'),
         title: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              'mStream',
-            ),
+            Text('mStream',),
             Visibility(
               visible: currentServer < 0 ? false : true,
               child: Text(
                 currentServer < 0 ? '' : (serverList[currentServer].nickname.length > 0 ? serverList[currentServer].nickname: serverList[currentServer].url),
-                style: TextStyle(
-                  fontSize: 12.0,
-                ),
+                style: TextStyle(fontSize: 12.0),
               ),
             ),
           ],
@@ -408,13 +403,14 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       ),
       drawer: new Drawer(
         child: new ListView(
+          physics: const NeverScrollableScrollPhysics(),
           children: <Widget> [
             new DrawerHeader(
               child: new Image(image: AssetImage('graphics/mstream-logo.png')),
             ),
             new ListTile(
               leading: new Icon(Icons.folder),
-              title: new Text('File Explorer'),
+              title: new Text('File Explorer', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17),),
               onTap: () {
                 getFileList("");
                 Navigator.of(context).pop();
@@ -422,7 +418,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               },
             ),
             new ListTile(
-              title: new Text('Playlists'),
+              title: new Text('Playlists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
               leading: new Icon(Icons.queue_music),
               onTap: () {
                 getPlaylists();
@@ -431,22 +427,22 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               },
             ),
             new ListTile(
-              title: new Text('Albums'),
+              title: new Text('Albums', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
               leading: new Icon(Icons.album),
               onTap: () {},
             ),
             new ListTile(
-              title: new Text('Artists'),
+              title: new Text('Artists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
               leading: new Icon(Icons.library_music),
               onTap: () {},
             ),
             new ListTile(
-              title: new Text('Local Files'),
+              title: new Text('Local Files', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
               leading: new Icon(Icons.folder_open),
               onTap: () {},
             ),
             new ListTile(
-              title: new Text('Add Server'),
+              title: new Text('Add Server', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
               leading: new Icon(Icons.add_to_queue),
               onTap: () {
                 Navigator.of(context).pop();
@@ -455,7 +451,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             ),
             new Divider(),
             new ListTile(
-              title: new Text('About mStream'),
+              title: new Text('About mStream', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
               leading: new Icon(Icons.equalizer),
               onTap: () {
                 Navigator.of(context).pop();

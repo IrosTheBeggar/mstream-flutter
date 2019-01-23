@@ -65,3 +65,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.io/custom-fonts/#from-packages
+  fonts:
+    - family: Jura
+      fonts:
+        - asset: fonts/Jura-Bold.ttf
+          weight: 700
