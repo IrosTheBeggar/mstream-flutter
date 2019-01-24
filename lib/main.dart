@@ -66,12 +66,15 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             itemCount: mStreamAudio.playlist.length,
             itemBuilder: (BuildContext context, int index) {
               print(mStreamAudio.playlist[index]);
-              return new ListTile(
-                leading: new Icon(Icons.folder),
-                title: Text(mStreamAudio.playlist[index].filename),
-                onTap: () {
-                  mStreamAudio.goToSongAtPosition(index);
-                }
+              return  Container(
+                color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
+                child: new ListTile(
+                  leading: new Icon(Icons.folder),
+                  title: Text(mStreamAudio.playlist[index].filename),
+                  onTap: () {
+                    mStreamAudio.goToSongAtPosition(index);
+                  }
+                )
               );
             }
           )
@@ -107,10 +110,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   print(displayList[index].data);
                   print(displayList[index].name);
                   if(displayList[index].type == 'file') {
-                    Uri url = Uri.parse(serverList[currentServer].url + '/media' + displayList[index].data);
-                    print('https://demo.mstream.io/media/media/ems%20essa%20minha%20fm.mp3');
+                    Uri url = Uri.parse(serverList[currentServer].url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
                     QueueItem newItem = new QueueItem(displayList[index].name, url.toString(), null, null, null, null, null, null, null, null, null);
-                    setState(() {                    
+                    setState(() {
                       mStreamAudio.addSong(newItem);
                     });
                   }
@@ -441,6 +443,28 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         children: [localFile(), advanced()],
         controller: _tabController
       ),
+      bottomNavigationBar: BottomAppBar(
+        child: new Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Row(
+              children: [            
+                IconButton(icon: Icon(Icons.skip_previous), onPressed: () {},),
+                IconButton(icon: Icon(Icons.play_circle_filled), onPressed: () {},),
+                IconButton(icon: Icon(Icons.skip_next), onPressed: () {},),
+              ]
+            ),
+            Row(
+              children: [            
+                IconButton(icon: Icon(Icons.repeat), onPressed: () {},),
+                IconButton(icon: Icon(Icons.shuffle), onPressed: () {},),
+                IconButton(icon: Icon(Icons.speaker), onPressed: () {},),
+              ]
+            ),
+          ],
+        ),
+      )
     );
   }
 }
@@ -469,9 +493,10 @@ class MyCustomFormState extends State<MyCustomForm> {
     Uri lol = Uri.parse(this._url);
     String origin = lol.origin;
     var response;
-
+    String thisUrl = lol.resolve('/ping').toString();
+    print(thisUrl);
     try {
-      response = await http.get(lol.resolve('/ping').toString());
+      response = await http.get(thisUrl);
       print(response);
     } catch(err) {
       Scaffold.of(context).showSnackBar(SnackBar(content: Text('Could not connect to server')));

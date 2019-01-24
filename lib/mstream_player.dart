@@ -68,16 +68,27 @@ class MstreamPlayer {
     // Stage 1
   }
 
+  // Done
   nextSong() {
-    // NOW
+    _goToNextSong();
   }
 
   previousSong() {
     // NOW
   }
 
+  // Done
   goToSongAtPosition(index) {
-    // Stage 1
+    try {
+      playlist[index];
+    } catch (err) {
+      return false;
+    }
+
+    _clearEnd();
+
+    positionCache = index;
+    _goToSong();
   }
 
   removeSongAtPosition() {
@@ -109,7 +120,7 @@ class MstreamPlayer {
     }
 
     positionCache++;
-    clearEnd();
+    _clearEnd();
     return _goToSong();
   }
 
@@ -223,7 +234,7 @@ class MstreamPlayer {
   }
 
   // DONE!
-  clearEnd() {
+  _clearEnd() {
     PlayerObjectX localPlayer = getCurrentPlayer();
     localPlayer.playerObject.completionHandler = () {
       return null;
@@ -290,8 +301,8 @@ class MstreamPlayer {
       return false;
     }
 
-    var oPlayer = getOtherPlayer();
-    _setMedia(playlist[position], oPlayer, false);
+    // var oPlayer = getOtherPlayer();
+    // _setMedia(playlist[position], oPlayer, false);
     print('IT CACHED!!');
     return true;
   }
