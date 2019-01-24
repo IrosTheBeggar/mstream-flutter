@@ -10,6 +10,7 @@ class QueueItem {
   String hash;
   int rating;
   String albumArt;
+  bool error;
 
   QueueItem(this.filename, this.url, this.artist, this.album, this.title, this. track, this.disc, this.year, this.hash, this.rating, this.albumArt );
 

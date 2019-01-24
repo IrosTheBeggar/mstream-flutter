@@ -46,7 +46,6 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateMixin {
-  AudioCache audioCache = new AudioCache();
   AudioPlayer advancedPlayer = new AudioPlayer();
   String localFilePath;
 
