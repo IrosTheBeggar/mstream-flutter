@@ -1,8 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-
-import 'package:audioplayers/audio_cache.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -14,6 +11,9 @@ import 'objects/display_item.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path/path.dart' as path;
 
+import 'mstream_player.dart';
+import 'objects/queue_item.dart';
+
 typedef void OnError(Exception exception);
 
 const kUrl1 = 'http://www.rxlabz.com/labz/audio.mp3';
@@ -22,6 +22,8 @@ String tabText = 'File Explorer';
 
 List<Server> serverList = new List();
 int currentServer = -1;
+
+MstreamPlayer mStreamAudio = new MstreamPlayer();
 
 Future<File> get _serverFile async {
   final directory = await getApplicationDocumentsDirectory();
@@ -46,36 +48,39 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateMixin {
-  AudioPlayer advancedPlayer = new AudioPlayer();
-  String localFilePath;
-
   TabController _tabController;
 
+  String localFilePath;
   List<DisplayItem> displayList = new List();
-  
   List<List<DisplayItem>> displayCache = new List();
 
+  Widget advanced() {
+    return new Column(children: <Widget>[
+      new Row(children: <Widget>[
 
-  Widget _tab(List<Widget> children) {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.all(0.0),
-        child: Column(
-          children: children
-              .map((w) => Container(child: w, padding: EdgeInsets.all(6.0)))
-              .toList(),
+      ]),
+      Expanded(
+        child: SizedBox(
+          child: new ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics (),
+            itemCount: mStreamAudio.playlist.length,
+            itemBuilder: (BuildContext context, int index) {
+              print(mStreamAudio.playlist[index]);
+              return new ListTile(
+                leading: new Icon(Icons.folder),
+                title: Text(mStreamAudio.playlist[index].filename),
+                onTap: () {
+                  mStreamAudio.goToSongAtPosition(index);
+                }
+              );
+            }
+          )
         ),
-      ),
-    );
+      )
+    ]);
   }
 
-  Widget _btn(String txt, VoidCallback onPressed) {
-    return ButtonTheme(
-        minWidth: 48.0,
-        child: RaisedButton(child: Text(txt), onPressed: onPressed));
-  }
-
-  // Loal File Screen
+  // Load File Screen
   Widget localFile() {
     return new Column(children: <Widget>[
       new Row(children: <Widget>[
@@ -99,6 +104,17 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 title: Text(displayList[index].name),
                 subtitle: displayList[index].subtext == null ? null : Text(displayList[index].subtext),
                 onTap: () {
+                  print(displayList[index].data);
+                  print(displayList[index].name);
+                  if(displayList[index].type == 'file') {
+                    Uri url = Uri.parse(serverList[currentServer].url + '/media' + displayList[index].data);
+                    print('https://demo.mstream.io/media/media/ems%20essa%20minha%20fm.mp3');
+                    QueueItem newItem = new QueueItem(displayList[index].name, url.toString(), null, null, null, null, null, null, null, null, null);
+                    setState(() {                    
+                      mStreamAudio.addSong(newItem);
+                    });
+                  }
+
                   if(displayList[index].type == 'directory') {
                     getFileList(displayList[index].data);
                   }
@@ -156,9 +172,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     res['contents'].forEach((e) {
       print(e);
       Icon thisIcon = e['type'] == 'directory' ? Icon(Icons.folder) : Icon(Icons.music_note);
+      var thisType = (e['type'] == 'directory') ? 'directory' : 'file';
       setState(() {
         displayList.add(
-          new DisplayItem(e['name'], e['type'], path.join(res['path'], e['name']), thisIcon, null)
+          new DisplayItem(e['name'], thisType, path.join(res['path'], e['name']), thisIcon, null)
         );
       });
     });
@@ -208,46 +225,6 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         );
       });
     });
-  }
-
-  // Advanced Screen
-  Widget advanced() {
-    return _tab([
-      Column(children: [
-        Text('Source Url'),
-        Row(children: [
-          _btn('Audio 1', () => advancedPlayer.setUrl(kUrl1)),
-          _btn('Audio 2', () => advancedPlayer.setUrl(kUrl2)),
-        ], mainAxisAlignment: MainAxisAlignment.spaceEvenly),
-      ]),
-      Column(children: [
-        Text('Release Mode'),
-        Row(children: [
-          _btn('STOP', () => advancedPlayer.setReleaseMode(ReleaseMode.STOP)),
-          _btn('LOOP', () => advancedPlayer.setReleaseMode(ReleaseMode.LOOP)),
-          _btn('RELEASE',
-              () => advancedPlayer.setReleaseMode(ReleaseMode.RELEASE)),
-        ], mainAxisAlignment: MainAxisAlignment.spaceEvenly),
-      ]),
-      new Column(children: [
-        Text('Volume'),
-        Row(children: [
-          _btn('0.0', () => advancedPlayer.setVolume(0.0)),
-          _btn('0.5', () => advancedPlayer.setVolume(0.5)),
-          _btn('1.0', () => advancedPlayer.setVolume(1.0)),
-          _btn('2.0', () => advancedPlayer.setVolume(2.0)),
-        ], mainAxisAlignment: MainAxisAlignment.spaceEvenly),
-      ]),
-      new Column(children: [
-        Text('Control'),
-        Row(children: [
-          _btn('resume', () => advancedPlayer.resume()),
-          _btn('pause', () => advancedPlayer.pause()),
-          _btn('stop', () => advancedPlayer.stop()),
-          _btn('release', () => advancedPlayer.release()),
-        ], mainAxisAlignment: MainAxisAlignment.spaceEvenly),
-      ]),
-    ]);
   }
 
   Future<List>  readServerList() async {
@@ -673,8 +650,9 @@ class AboutScreen extends StatelessWidget {
         child: new ListView(
           children: [
             new Image(image: AssetImage('graphics/mstream-logo.png')),
-            new Text('mStream Mobile v0.1'),
-            new Text('Alpha Edition'),
+            new Container(height: 15,),
+            new Text('mStream Mobile v0.1',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            new Text('Alpha Edition',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
           ]
         )
       )
