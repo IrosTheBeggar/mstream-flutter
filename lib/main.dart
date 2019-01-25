@@ -58,8 +58,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         children: <Widget>[
           Row(
             children: [
-              IconButton(icon: Icon(Icons.save), onPressed: () {},),
-              IconButton(icon: Icon(Icons.share), onPressed: () {},),
+              IconButton(icon: Icon(Icons.save), onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => SavePlaylistScreen()));
+              }),
+              IconButton(icon: Icon(Icons.share), onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
+              }),
             ]
           ),
           Row(
@@ -436,11 +440,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               onTap: () {},
             ),
             new ListTile(
-              title: new Text('Add Server', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-              leading: new Icon(Icons.add_to_queue),
+              title: new Text('Manage Servers', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+              leading: new Icon(Icons.router),
               onTap: () {
                 Navigator.of(context).pop();
-                Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageServersScreen()), );
               },
             ),
             new Divider(),
@@ -712,6 +716,63 @@ class AboutScreen extends StatelessWidget {
             new Container(height: 15,),
             new Text('mStream Mobile v0.1',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
             new Text('Alpha Edition',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+          ]
+        )
+      )
+    );
+  }
+}
+
+class ShareScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Share Playlist"),
+      ),
+      body: new Container(
+        padding: new EdgeInsets.all(40.0),
+        child: new ListView(
+          children: [
+            new Text('Share Playlist Goes Here',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+          ]
+        )
+      )
+    );
+  }
+}
+
+class SavePlaylistScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Share Playlist"),
+      ),
+      body: new Container(
+        padding: new EdgeInsets.all(40.0),
+        child: new ListView(
+          children: [
+            new Text('Save Playlist Goes Here',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+          ]
+        )
+      )
+    );
+  }
+}
+
+class ManageServersScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Share Playlist"),
+      ),
+      body: new Container(
+        padding: new EdgeInsets.all(40.0),
+        child: new ListView(
+          children: [
+            new Text('Manage Servers',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
           ]
         )
       )
