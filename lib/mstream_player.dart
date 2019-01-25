@@ -61,11 +61,21 @@ class MstreamPlayer {
   }
 
   clearAndPlay() {
-    // Stage 1
+    // Stage 2
   }
 
   clearPlaylist() {
-    // Stage 1
+    playlist.length = 0;
+    shuffleCache.length = 0;
+    positionCache = -1;
+
+    _clearEnd();
+
+    if(autoDj) {
+      _autoDJ();
+    }
+
+    return true;
   }
 
   // Done
@@ -74,7 +84,7 @@ class MstreamPlayer {
   }
 
   previousSong() {
-    // NOW
+    _goToPreviousSong();
   }
 
   // Done
@@ -101,6 +111,18 @@ class MstreamPlayer {
 
   _goToPreviousSong() {
     // Stage 1
+    if(shuffle == true) {
+      // TODO: Shuffle    
+    }
+
+    // Make sure there is a previous song
+    if (positionCache < 1) {
+      return false;
+    }
+
+    _clearEnd();
+    positionCache--;
+    return _goToSong();
   }
 
   // DONE!
@@ -116,6 +138,7 @@ class MstreamPlayer {
         positionCache = 0;
         return _goToSong();
       }
+      playing = false;
       return false;
     }
 
@@ -162,7 +185,6 @@ class MstreamPlayer {
   var duration = 0;
   var currentTime = 0;
   var playing = false;
-  var repeat = false;
   var volume = 100;
 
   // DONE!
@@ -230,7 +252,16 @@ class MstreamPlayer {
   }
 
   _howlPlayerPlayPause() {
-    // NOW
+    PlayerObjectX localPlayer = getCurrentPlayer();
+
+    // TODO: Check that media is loaded
+    if (playing == true) {
+      playing = false;
+      localPlayer.playerObject.pause();
+    } else {
+      localPlayer.playerObject.resume();
+      playing = true;
+    }
   }
 
   // DONE!
@@ -242,7 +273,11 @@ class MstreamPlayer {
   }
 
   playPause() {
-    // NOW
+    PlayerObjectX localPlayer = getCurrentPlayer();
+
+    if (localPlayer.playerType == 'default') {
+      return _howlPlayerPlayPause();
+    }
   }
 
   changePlaybackRate() {
@@ -308,12 +343,22 @@ class MstreamPlayer {
   }
 
   bool shouldLoop = false;
-  setRepeat() {
-    // Stage 1
+  setRepeat(bool newVal) {
+    if (autoDj == true) {
+      shouldLoop = false;
+      return false;
+    }
+    shouldLoop = newVal;
+    return shouldLoop;
   }
 
   toggleRepeat() {
-    // Stage 1
+    if (autoDj == true) {
+      shouldLoop = false;
+      return false;
+    }
+    shouldLoop = !shouldLoop;
+    return shouldLoop;
   }
 
   bool shuffle = false;

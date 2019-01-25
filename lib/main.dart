@@ -16,11 +16,8 @@ import 'objects/queue_item.dart';
 
 typedef void OnError(Exception exception);
 
-const kUrl1 = 'http://www.rxlabz.com/labz/audio.mp3';
-const kUrl2 = 'http://www.rxlabz.com/labz/audio2.mp3';
-String tabText = 'File Explorer';
-
 List<Server> serverList = new List();
+String tabText = 'File Explorer';
 int currentServer = -1;
 
 MstreamPlayer mStreamAudio = new MstreamPlayer();
@@ -56,9 +53,26 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
   Widget advanced() {
     return new Column(children: <Widget>[
-      new Row(children: <Widget>[
-
-      ]),
+      new Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Row(
+            children: [
+              IconButton(icon: Icon(Icons.save), onPressed: () {},),
+              IconButton(icon: Icon(Icons.share), onPressed: () {},),
+            ]
+          ),
+          Row(
+            children: [
+              IconButton(icon: Icon(Icons.cancel), color: Colors.redAccent, onPressed: () {
+                setState(() {
+                  mStreamAudio.clearPlaylist();
+                });
+              },),
+            ]
+          )
+        ]
+      ),
       Expanded(
         child: SizedBox(
           child: new ListView.builder(
@@ -69,10 +83,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               return  Container(
                 color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
                 child: new ListTile(
-                  leading: new Icon(Icons.folder),
+                  leading: new Icon(Icons.music_note),
                   title: Text(mStreamAudio.playlist[index].filename),
                   onTap: () {
-                    mStreamAudio.goToSongAtPosition(index);
+                    setState(() {
+                      mStreamAudio.goToSongAtPosition(index);
+                    });
                   }
                 )
               );
@@ -450,15 +466,35 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           children: <Widget>[
             Row(
               children: [            
-                IconButton(icon: Icon(Icons.skip_previous), onPressed: () {},),
-                IconButton(icon: Icon(Icons.play_circle_filled), onPressed: () {},),
-                IconButton(icon: Icon(Icons.skip_next), onPressed: () {},),
+                IconButton(icon: Icon(Icons.skip_previous), onPressed: () {
+                  setState(() {
+                    mStreamAudio.previousSong();
+                  });
+                }),
+                IconButton(icon: (mStreamAudio.playing == false) ? Icon(Icons.play_circle_outline) : Icon(Icons.pause_circle_outline), onPressed: () {
+                  setState(() {
+                    mStreamAudio.playPause();
+                  });
+                }),
+                IconButton(icon: Icon(Icons.skip_next), onPressed: () {
+                  setState(() {
+                    mStreamAudio.nextSong();
+                  });
+                }),
               ]
             ),
             Row(
               children: [            
-                IconButton(icon: Icon(Icons.repeat), onPressed: () {},),
-                IconButton(icon: Icon(Icons.shuffle), onPressed: () {},),
+                IconButton(icon: Icon(Icons.repeat, color: (mStreamAudio.shouldLoop == true) ? Colors.lightBlueAccent : Colors.black), onPressed: () {
+                  setState(() {
+                    mStreamAudio.toggleRepeat();
+                  });
+                },),
+                IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.blue : Colors.black, onPressed: () {
+                  setState(() {
+                    mStreamAudio.toggleShuffle();
+                  });
+                }),
                 IconButton(icon: Icon(Icons.speaker), onPressed: () {},),
               ]
             ),
@@ -494,10 +530,9 @@ class MyCustomFormState extends State<MyCustomForm> {
     String origin = lol.origin;
     var response;
     String thisUrl = lol.resolve('/ping').toString();
-    print(thisUrl);
+
     try {
       response = await http.get(thisUrl);
-      print(response);
     } catch(err) {
       Scaffold.of(context).showSnackBar(SnackBar(content: Text('Could not connect to server')));
       return;
@@ -661,7 +696,6 @@ class AddServerScreen extends StatelessWidget {
     );
   }
 }
-
 
 class AboutScreen extends StatelessWidget {
   @override
