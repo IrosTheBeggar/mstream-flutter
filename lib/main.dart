@@ -117,6 +117,17 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         new IconButton(icon: Icon(Icons.arrow_back), tooltip: 'Go Back', onPressed: () {
           print('BACK');
         }),
+        new IconButton(icon: Icon(Icons.library_add), tooltip: 'Go Back', onPressed: () {
+          displayList.forEach((element) {
+            if (element.type == 'file') {
+              Uri url = Uri.parse(serverList[currentServer].url + '/media' + element.data + '?token=' + serverList[currentServer].jwt );
+              QueueItem newItem = new QueueItem(element.name, url.toString(), null, null, null, null, null, null, null, null, null);
+              setState(() {
+                mStreamAudio.addSong(newItem);
+              });
+            }
+          });
+        }),
         Expanded(child: TextField(decoration: InputDecoration(
           border: InputBorder.none,
           hintText: 'Search'
@@ -150,6 +161,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
                   if(displayList[index].type == 'addServer') {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
+                  }
+
+                  if(displayList[index].type == 'playlist') {
+                    getPlaylist(displayList[index].data);
                   }
                 },
               );
@@ -256,6 +271,49 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     });
   }
 
+  Future<void> getPlaylist(String playlist) async {
+    print(playlist);
+    if (currentServer < 0) {
+      Fluttertoast.showToast(
+        msg: "No Server Selected",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;      
+    }
+
+    Uri currentUri = Uri.parse(serverList[currentServer].url);
+    String url = currentUri.resolve('/playlist/load').toString();
+    var response = await http.post(url, body: {"playlistname": playlist},  headers: { 'x-access-token': serverList[currentServer].jwt});
+
+    if (response.statusCode > 299) {
+      Fluttertoast.showToast(
+        msg: "Call Failed",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;   
+    }
+
+    var res = jsonDecode(response.body);
+    displayList.clear();
+    res.forEach((e) {
+      setState(() {
+        displayList.add(
+          // TODO: Handle Metadata
+          // TODO: Properly build URL
+          new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null)
+        );
+      });
+    });
+  }
+
   Future<List>  readServerList() async {
     try {
       final file = await _serverFile;
@@ -268,7 +326,6 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       return [];
     }
   }
-
 
   @override
   void initState() {
