@@ -181,6 +181,7 @@ class MstreamPlayer {
 
       _clearEnd();
       _goToSong();
+      return true;
     }
 
     // Make sure there is a previous song
