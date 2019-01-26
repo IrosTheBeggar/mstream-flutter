@@ -28,12 +28,15 @@ class MstreamPlayer {
     return false;
   }
 
-  // DONE
   addSong(QueueItem newSong) {
     if(shuffle) {
       Random rnd = new Random();
-      int pos = rnd.nextInt(shuffleCache.length);
-      shuffleCache.insert(pos, newSong);
+      if(shuffleCache.length == 0) {
+        shuffleCache.add(newSong);
+      }else {
+        int pos = rnd.nextInt(shuffleCache.length);
+        shuffleCache.insert(pos, newSong);
+      }
     }
 
     _addSongToPlaylist(newSong);
@@ -47,7 +50,7 @@ class MstreamPlayer {
     // Stage 2
   }
 
-  // DONE
+  // MISSING SOME STUFF
   _addSongToPlaylist(newSong) {
     playlist.add(newSong);
 
@@ -78,7 +81,6 @@ class MstreamPlayer {
     return true;
   }
 
-  // Done
   nextSong() {
     _goToNextSong();
   }
@@ -87,7 +89,6 @@ class MstreamPlayer {
     _goToPreviousSong();
   }
 
-  // Done
   goToSongAtPosition(index) {
     try {
       playlist[index];
@@ -101,18 +102,85 @@ class MstreamPlayer {
     _goToSong();
   }
 
-  removeSongAtPosition() {
-    // Stage 1
+  removeSongAtPosition(int position) {
+    // Check that position is filled
+    if (position > playlist.length || position < 0) {
+      return false;
+    }
+
+    QueueItem removedSong = playlist.removeAt(position);
+
+    if(shuffle == true) {
+      //  Remove song from shuffle Cache
+      for (var i = 0, len = shuffleCache.length; i < len; i++) {
+        // Check if this is the current song
+        if (removedSong == shuffleCache[i]) {
+          shuffleCache.removeAt(i);
+        }
+      }
+      for (var i = 0, len = shufflePrevious.length; i < len; i++) {
+        // Check if this is the current song
+        if (removedSong == shufflePrevious[i]) {
+          shufflePrevious.removeAt(i);
+        }
+      }
+    }
+
+    // Handle case where user removes current song and it's the last song in the playlist
+    if (position == positionCache && position == playlist.length) {
+      _clearEnd();
+      if(shuffle == true) {
+        _goToNextSong();
+      } else if (shouldLoop == true) {
+        positionCache = 0;
+        _goToSong();
+      } else {
+        positionCache = -1;
+      }
+    } else if (position == positionCache) { // User removes currently playing song
+      _clearEnd();
+      // If random is set, go to random song
+      if (shuffle == true) {
+        _goToNextSong();
+      } else {
+       _goToSong();
+      }
+    } else if (position < positionCache) {
+      positionCache--;
+    } else if (position == (positionCache + 1)) {
+      if (cacheTimer != null) {
+        cacheTimer.cancel();
+      }
+      cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () => _setCachedSong(positionCache + 1));
+    }
   }
 
-  getCurrentSong() {
-    // Stage 1
+  QueueItem getCurrentSong() {
+    PlayerObjectX lPlayer = getCurrentPlayer();
+    return lPlayer.songObject;
   }
 
   _goToPreviousSong() {
-    // Stage 1
     if(shuffle == true) {
-      // TODO: Shuffle    
+      if (shufflePrevious.length <= 1) {
+        return false;
+      }
+
+      QueueItem nextSong = shufflePrevious.removeLast();
+      shuffleCache.add(nextSong);
+
+      QueueItem currentSong = shufflePrevious[shufflePrevious.length - 1];
+
+      // Reset Postion Cache
+      for (var i = 0, len = playlist.length; i < len; i++) {
+        // Check if this is the current song
+        if (currentSong == playlist[i]) {
+          positionCache = i;
+        } 
+      }
+
+      _clearEnd();
+      _goToSong();
     }
 
     // Make sure there is a previous song
@@ -125,10 +193,41 @@ class MstreamPlayer {
     return _goToSong();
   }
 
-  // DONE!
   _goToNextSong() {
     if(shuffle == true) {
-      // TODO:
+      QueueItem nextSong = shuffleCache.removeLast();
+
+      // Prevent same song from playing twice after a re-shuffle
+      if (nextSong == getCurrentSong()) {
+        shuffleCache.insert(0, nextSong);
+        nextSong = shuffleCache.removeLast();
+      }
+
+      if (shuffleCache.length == 0) {
+        _newShuffle();
+      }
+
+      // Reset position cache
+      for (int i = 0, len = playlist.length; i < len; i++) {
+        // Check if this is the current song
+        if (nextSong == playlist[i]) {
+          positionCache = i;
+        }
+      }
+      // Go To Song
+      _clearEnd();
+      _goToSong();
+
+      // Remove duplicates from shuffle previous
+      // for (int j = 0, len2 = shufflePrevious.length; j < len2; j++) {
+      //   // Check if this is the current song
+      //   if (nextSong == shufflePrevious[j]) {
+      //     shufflePrevious.removeAt(j); // FIXME: Needs to be tested
+      //   }
+      // }
+
+      shufflePrevious.add(nextSong);
+      return true;
     }
 
     try {
@@ -187,7 +286,6 @@ class MstreamPlayer {
   var playing = false;
   var volume = 100;
 
-  // DONE!
   _goToSong() {
     try {
       playlist[ positionCache ];
@@ -242,7 +340,19 @@ class MstreamPlayer {
   }
 
   resetPositionCache() {
-    // Stage 1
+    PlayerObjectX lPlayer = getCurrentPlayer();
+    QueueItem curSong = lPlayer.songObject;
+
+    for (int i = 0; i < playlist.length; i++) {
+      // Check if this is the current song
+      if (curSong == playlist[i]) {
+        positionCache = i;
+        return;
+      }
+    }
+
+    // No song found, reset
+    positionCache = -1;
   }
 
   _howlPlayerPlay() {
@@ -264,7 +374,6 @@ class MstreamPlayer {
     }
   }
 
-  // DONE!
   _clearEnd() {
     PlayerObjectX localPlayer = getCurrentPlayer();
     localPlayer.playerObject.completionHandler = () {
@@ -325,7 +434,7 @@ class MstreamPlayer {
     // Stage 1
   }
 
-  // DONE!
+  // MISSING SOME STUFF
   Timer cacheTimer;
   _setCachedSong(int position) {
     print('ATTEMPTING TO CACHE!');
@@ -364,24 +473,69 @@ class MstreamPlayer {
   bool shuffle = false;
   List shuffleCache = new List();
   List shufflePrevious = new List();
-  setShuffle(){
-    // Stage 1
+  setShuffle(bool newVal){
+    if (autoDj == true) {
+      shuffle = false;
+      return false;
+    }
+    shuffle = newVal;
+    if (shuffle == true) {
+      _newShuffle();
+    } else {
+      _turnShuffleOff();
+    }
+    return shuffle;
   }
 
   toggleShuffle() {
-    // Stage 1
+    if (autoDj == true) {
+      shuffle = false;
+      return false;
+    }
+
+    shuffle = !shuffle;
+    print(shuffle);
+    if (shuffle == true) {
+      _newShuffle();
+    } else {
+      _turnShuffleOff();
+    }
+    return shuffle;
   }
 
   _newShuffle() {
-    // Stage 1
+    // Clone playlist
+    List<QueueItem> newList = new List();
+    playlist.forEach((val) => newList.add(val));
+    shuffleCache = _shuffle(newList);
+    if(shufflePrevious.length > playlist.length) {
+      shufflePrevious.length = playlist.length;
+    }
   }
 
   _turnShuffleOff() {
-    // Stage 1
+    shufflePrevious.length = 0;
+    shuffleCache.length = 0;
   }
 
-  _shuffle() {
-    // Stage 1  
+  List<QueueItem> _shuffle(List<QueueItem> shuffleThis) {
+    int currentIndex = shuffleThis.length;
+    var temporaryValue;
+    int randomIndex;
+
+    // While there remain elements to shuffle...
+    while(currentIndex != 0) {
+      // Pick a remaining element...
+      randomIndex = genRandomNum(0, currentIndex);
+      currentIndex = currentIndex - 1;
+
+      // And swap it with the current element.
+      temporaryValue = shuffleThis[currentIndex];
+      shuffleThis[currentIndex] = shuffleThis[randomIndex];
+      shuffleThis[randomIndex] = temporaryValue;
+    }
+
+    return shuffleThis;
   }
 
   var autoDjIgnoreArray = new List();
@@ -427,5 +581,7 @@ class MstreamPlayer {
   MstreamPlayer();
 }
 
-
-
+int genRandomNum(int min, int max) {
+  Random newRandom = new Random();
+  return min + newRandom.nextInt(max - min);
+}

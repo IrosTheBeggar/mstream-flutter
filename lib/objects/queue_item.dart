@@ -1,3 +1,6 @@
+import 'package:uuid/uuid.dart';
+var uuid = new Uuid();
+
 class QueueItem {
   String filename;
   String url;
@@ -11,6 +14,7 @@ class QueueItem {
   int rating;
   String albumArt;
   bool error;
+  final String uuidString = uuid.v4();
 
   QueueItem(this.filename, this.url, this.artist, this.album, this.title, this. track, this.disc, this.year, this.hash, this.rating, this.albumArt );
 

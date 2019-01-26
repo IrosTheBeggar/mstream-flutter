@@ -83,17 +83,24 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             physics: const AlwaysScrollableScrollPhysics (),
             itemCount: mStreamAudio.playlist.length,
             itemBuilder: (BuildContext context, int index) {
-              print(mStreamAudio.playlist[index]);
-              return  Container(
-                color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
-                child: new ListTile(
-                  leading: new Icon(Icons.music_note),
-                  title: Text(mStreamAudio.playlist[index].filename),
-                  onTap: () {
-                    setState(() {
-                      mStreamAudio.goToSongAtPosition(index);
-                    });
-                  }
+              return  Dismissible(
+                key: Key(mStreamAudio.playlist[index].uuidString),
+                onDismissed: (direction) {
+                  setState(() {
+                    mStreamAudio.removeSongAtPosition(index);
+                  });
+                },
+                child:  Container(
+                  color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
+                  child: new ListTile(
+                    leading: new Icon(Icons.music_note),
+                    title: Text(mStreamAudio.playlist[index].filename),
+                    onTap: () {
+                      setState(() {
+                        mStreamAudio.goToSongAtPosition(index);
+                      });
+                    }
+                  )
                 )
               );
             }
@@ -493,8 +500,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   setState(() {
                     mStreamAudio.toggleRepeat();
                   });
-                },),
-                IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.blue : Colors.black, onPressed: () {
+                }),
+                IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.lightBlueAccent : Colors.black, onPressed: () {
                   setState(() {
                     mStreamAudio.toggleShuffle();
                   });
@@ -747,7 +754,7 @@ class SavePlaylistScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Share Playlist"),
+        title: Text("Save Playlist"),
       ),
       body: new Container(
         padding: new EdgeInsets.all(40.0),
@@ -766,7 +773,7 @@ class ManageServersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Share Playlist"),
+        title: Text("Manage Servers"),
       ),
       body: new Container(
         padding: new EdgeInsets.all(40.0),
