@@ -155,6 +155,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     });
                   }
 
+                  if(displayList[index].type == 'album') {
+                    getAlbumSongs(displayList[index].data);
+                  }
+
                   if(displayList[index].type == 'directory') {
                     getFileList(displayList[index].data);
                   }
@@ -225,9 +229,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     });
   }
 
-  Future<void> getPlaylists() async {
+  Future<void> getAlbumSongs(String album) async {
     setState(() {
-      tabText = 'Playlists';
+      tabText = 'Albums';
     });
 
     if (currentServer < 0) {
@@ -243,8 +247,97 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     Uri currentUri = Uri.parse(serverList[currentServer].url);
+    String url = currentUri.resolve('/db/album-songs').toString();
+    var response = await http.post(url, body: {"album": album}, headers: { 'x-access-token': serverList[currentServer].jwt});
+    
+    if (response.statusCode > 299) {
+      Fluttertoast.showToast(
+        msg: "Call Failed",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 2,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;   
+    }
+
+    var res = jsonDecode(response.body);
+    displayList.clear();
+    res.forEach((e) {
+      print(e);
+      setState(() {
+        displayList.add(
+          new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.album), null)
+        );
+      });
+    });
+  }
+
+  Future<void> getAllAlbums() async {
+    setState(() {
+      tabText = 'Albums';
+    });
+
+    if (currentServer < 0) {
+      Fluttertoast.showToast(
+        msg: "No Server Selected",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;      
+    }
+
+    Uri currentUri = Uri.parse(serverList[currentServer].url);
+    String url = currentUri.resolve('/db/albums').toString();
+    var response = await http.get(url, headers: { 'x-access-token': serverList[currentServer].jwt});
+    
+    if (response.statusCode > 299) {
+      Fluttertoast.showToast(
+        msg: "Call Failed",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 2,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;   
+    }
+
+    var res = jsonDecode(response.body);
+    displayList.clear();
+    res['albums'].forEach((e) {
+      print(e);
+      setState(() {
+        displayList.add(
+          new DisplayItem(e['name'], 'album', e['name'], Icon(Icons.album), null)
+        );
+      });
+    });
+  }
+
+  Future<void> getPlaylists() async {
+      setState(() {
+        tabText = 'Playlists';
+      });
+
+    if (currentServer < 0) {
+      Fluttertoast.showToast(
+        msg: "No Server Selected",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;      
+    }
+
+    Uri currentUri = Uri.parse(serverList[currentServer].url);
     String url = currentUri.resolve('/playlist/getall').toString();
-    print(serverList[currentServer].jwt);
     var response = await http.get(url, headers: { 'x-access-token': serverList[currentServer].jwt});
 
     if (response.statusCode > 299) {
@@ -491,7 +584,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             new ListTile(
               title: new Text('Albums', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
               leading: new Icon(Icons.album),
-              onTap: () {},
+              onTap: () {
+                getAllAlbums();
+                Navigator.of(context).pop();
+                _tabController.animateTo(0);
+              },
             ),
             new ListTile(
               title: new Text('Artists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
