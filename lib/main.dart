@@ -320,9 +320,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   }
 
   Future<void> getPlaylists() async {
-      setState(() {
-        tabText = 'Playlists';
-      });
+    setState(() {
+      tabText = 'Playlists';
+    });
 
     if (currentServer < 0) {
       Fluttertoast.showToast(
@@ -428,7 +428,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     // Load Servers
     readServerList().then((List contents) {
       print(contents);
-      // contents = []; // TODO: Remove this later
+      // contents = []; // This line will reset the server list to empty on boot
       contents.forEach((f) {
         print(f);
         var newServer = Server.fromJson(f);
@@ -625,46 +625,72 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         controller: _tabController
       ),
       bottomNavigationBar: BottomAppBar(
-        child: new Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Row(
-              children: [            
-                IconButton(icon: Icon(Icons.skip_previous), onPressed: () {
-                  setState(() {
-                    mStreamAudio.previousSong();
-                  });
-                }),
-                IconButton(icon: (mStreamAudio.playing == false) ? Icon(Icons.play_circle_outline) : Icon(Icons.pause_circle_outline), onPressed: () {
-                  setState(() {
-                    mStreamAudio.playPause();
-                  });
-                }),
-                IconButton(icon: Icon(Icons.skip_next), onPressed: () {
-                  setState(() {
-                    mStreamAudio.nextSong();
-                  });
-                }),
-              ]
+            GestureDetector(
+              onTapUp: (TapUpDetails details) {
+                var distance = details;
+                double width = MediaQuery.of(context).size.width;
+                print(width.toString());
+                print(distance.globalPosition.dx);
+
+                double percentage = distance.globalPosition.dx / width;
+                print(percentage);
+                mStreamAudio.seekByPercentage(percentage);
+              },
+              child: Container(
+                height: 16,
+                child: LinearProgressIndicator(
+                  value: mStreamAudio.currentTime != null && mStreamAudio.currentTime > 0
+                          ? mStreamAudio.currentTime /mStreamAudio.duration
+                          : 0.0,
+                  valueColor: new AlwaysStoppedAnimation(Colors.grey[300]),
+                ),
+              ),
             ),
             Row(
-              children: [            
-                IconButton(icon: Icon(Icons.repeat, color: (mStreamAudio.shouldLoop == true) ? Colors.lightBlueAccent : Colors.black), onPressed: () {
-                  setState(() {
-                    mStreamAudio.toggleRepeat();
-                  });
-                }),
-                IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.lightBlueAccent : Colors.black, onPressed: () {
-                  setState(() {
-                    mStreamAudio.toggleShuffle();
-                  });
-                }),
-                IconButton(icon: Icon(Icons.speaker), onPressed: () {},),
-              ]
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Row(
+                  children: [            
+                    IconButton(icon: Icon(Icons.skip_previous), onPressed: () {
+                      setState(() {
+                        mStreamAudio.previousSong();
+                      });
+                    }),
+                    IconButton(icon: (mStreamAudio.playing == false) ? Icon(Icons.play_circle_outline) : Icon(Icons.pause_circle_outline), onPressed: () {
+                      setState(() {
+                        mStreamAudio.playPause();
+                      });
+                    }),
+                    IconButton(icon: Icon(Icons.skip_next), onPressed: () {
+                      setState(() {
+                        mStreamAudio.nextSong();
+                      });
+                    }),
+                  ]
+                ),
+                Row(
+                  children: [            
+                    IconButton(icon: Icon(Icons.repeat, color: (mStreamAudio.shouldLoop == true) ? Colors.lightBlueAccent : Colors.black), onPressed: () {
+                      setState(() {
+                        mStreamAudio.toggleRepeat();
+                      });
+                    }),
+                    IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.lightBlueAccent : Colors.black, onPressed: () {
+                      setState(() {
+                        mStreamAudio.toggleShuffle();
+                      });
+                    }),
+                    IconButton(icon: Icon(Icons.speaker), onPressed: () {},),
+                  ]
+                ),
+              ],
             ),
-          ],
-        ),
+          ]
+        )
       )
     );
   }

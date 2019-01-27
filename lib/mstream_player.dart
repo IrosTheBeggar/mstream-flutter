@@ -18,9 +18,9 @@ class MstreamPlayer {
     // Stage 1
   }
 
-  changeVolume() {
-    // Stage 1
-  }
+  // Do we need this?  The device usually handles volume jsut fine
+  // changeVolume() {
+  // }
 
   Timer scrobbleTimer;
   scrobble() {
@@ -282,10 +282,10 @@ class MstreamPlayer {
   }
 
   var playbackRate = 1;
-  var duration = 0;
-  var currentTime = 0;
-  var playing = false;
-  var volume = 100;
+  int duration = 0;
+  int currentTime = 0;
+  bool playing = false;
+  // var volume = 100;
 
   _goToSong() {
     try {
@@ -300,6 +300,10 @@ class MstreamPlayer {
 
     var localPlayerObject = getCurrentPlayer();
     var otherPlayerObject = getOtherPlayer();
+
+    // Reset Duration
+    duration = 0;
+    currentTime = 0;
 
     if (localPlayerObject.playerType == 'default') {
       localPlayerObject.playerObject.release();
@@ -320,6 +324,12 @@ class MstreamPlayer {
     // newOtherPlayerObject.playerType = null;
     // newOtherPlayerObject.playerObject = null;
     newOtherPlayerObject.songObject = null;
+    newOtherPlayerObject.playerObject.durationHandler = (Duration d) {
+      return;
+    };
+    newOtherPlayerObject.playerObject.positionHandler = (Duration  p) {
+      return;
+    };
 
     // Cache next song
     // The timer prevents excessive caching when the user starts button mashing
@@ -402,6 +412,14 @@ class MstreamPlayer {
       _callMeOnStreamEnd();
     };
 
+    player.playerObject.durationHandler = (Duration d) {
+      duration = d.inSeconds;
+    };
+
+    player.playerObject.positionHandler = (Duration  p) {
+      currentTime = p.inSeconds;
+    };
+
     player.songObject = song;
     if (shouldPlay == true) {
       _howlPlayerPlay();
@@ -425,8 +443,16 @@ class MstreamPlayer {
     // Stage 2
   }
 
-  seekByPercentage() {
-    // Stage 1
+  seekByPercentage(double percentageAsDecimal) {
+    if(duration == 0) {
+      return;
+    }
+
+    var lPlayer = getCurrentPlayer();
+    if (lPlayer.playerType == 'default') {
+      double seektime = (percentageAsDecimal * duration);
+      lPlayer.playerObject.seek(new Duration(seconds: seektime.toInt()));
+    }
   }
 
   var sliderUpdateInterval;

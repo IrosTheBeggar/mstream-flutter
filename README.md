@@ -1,17 +1,25 @@
-# mstream_flutter
+# mStream Flutter
 
-A new Flutter project.
+Android and iPhone apps for [mStream Server](https://github.com/IrosTheBeggar/mStream)
 
-## Getting Started
+# This Project Needs Some Help
 
-This project is a starting point for a Flutter application.
+Currently Flutter does not have a way to handle background audio for iOS.  If you are an iOS developer who wants to help implement this, let me know.
 
-A few resources to get you started if this is your first Flutter project:
+# Features Todo List
 
-- [Lab: Write your first Flutter app](https://flutter.io/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.io/docs/cookbook)
-
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.io/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
- 
+* Edit & Remove Servers
+* Save Playlist
+* Share Playlist
+* Add individual song to playlist
+* Auto DJ
+* Browse Artists
+* Browse Local Files
+* Sync Files Locally
+* Gapless playback
+* Back button doesn't work
+* Sometimes the now playing song highlight doesn't update on song change + progress bar doesn't update until user event
+* Search Feature
+* Metadata Features
+* Star Ratings
+* Implement the audio_service library
