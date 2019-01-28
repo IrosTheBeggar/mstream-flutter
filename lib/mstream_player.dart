@@ -12,7 +12,7 @@ import 'package:mstream_flutter/objects/player_object.dart';
 class MstreamPlayer {
   int positionCache = -1;
   List<QueueItem> playlist = new List();
-  int cacheTimeout = 5;
+  int cacheTimeout = 16;
 
   editSongMetadata() {
     // Stage 1
@@ -151,7 +151,30 @@ class MstreamPlayer {
       if (cacheTimer != null) {
         cacheTimer.cancel();
       }
-      cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () => _setCachedSong(positionCache + 1));
+      // cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () => _setCachedSong(positionCache + 1));
+      cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () {
+        if(shuffle == true) {
+          try {
+            shuffleCache[0];
+            for (int i = 0; i < playlist.length; i++) {
+              if(playlist[i] == shuffleCache[0]) {
+                _setCachedSong(i);
+                break;
+              }
+            }
+          }catch (err) {
+
+          }
+        } else if (shouldLoop == true) {
+          if (positionCache == (playlist.length - 1)) {
+            _setCachedSong(0);
+          }  else {
+            _setCachedSong(positionCache + 1);
+          }
+        } else {
+          _setCachedSong(positionCache + 1);
+        }
+      });
     }
   }
 
@@ -310,6 +333,7 @@ class MstreamPlayer {
     }
 
     if (otherPlayerObject.songObject == playlist[positionCache]) {
+      playing = false;
       flipFlop();
       // Play
       playPause();
@@ -319,7 +343,6 @@ class MstreamPlayer {
 
     resetCurrentMetadata();
 
-    // TODO: This is a mess, figure out a better way
     var newOtherPlayerObject = getOtherPlayer();
     // newOtherPlayerObject.playerType = null;
     // newOtherPlayerObject.playerObject = null;
@@ -336,7 +359,33 @@ class MstreamPlayer {
     if (cacheTimer != null) {
       cacheTimer.cancel();
     }
-    cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () => _setCachedSong(positionCache + 1));
+
+    if (cacheTimer != null) {
+      cacheTimer.cancel();
+    }
+    cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () {
+      if(shuffle == true) {
+        try {
+          shuffleCache[0];
+          for (int i = 0; i < playlist.length; i++) {
+            if(playlist[i] == shuffleCache[shuffleCache.length - 1]) {
+              _setCachedSong(i);
+              break;
+            }
+          }
+        }catch (err) {
+
+        }
+      } else if (shouldLoop == true) {
+        if (positionCache == (playlist.length - 1)) {
+          _setCachedSong(0);
+        }  else {
+          _setCachedSong(positionCache + 1);
+        }
+      } else {
+        _setCachedSong(positionCache + 1);
+      }
+    });
 
     // Scrobble song after 30 seconds
     if (scrobbleTimer != null) {
@@ -472,8 +521,8 @@ class MstreamPlayer {
       return false;
     }
 
-    // var oPlayer = getOtherPlayer();
-    // _setMedia(playlist[position], oPlayer, false);
+    var oPlayer = getOtherPlayer();
+    _setMedia(playlist[position], oPlayer, false);
     print('IT CACHED!!');
     return true;
   }
@@ -527,6 +576,31 @@ class MstreamPlayer {
     } else {
       _turnShuffleOff();
     }
+
+    cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () {
+      if(shuffle == true) {
+        try {
+          shuffleCache[0];
+          for (int i = 0; i < playlist.length; i++) {
+            if(playlist[i] == shuffleCache[shuffleCache.length - 1]) {
+              _setCachedSong(i);
+              break;
+            }
+          }
+        }catch (err) {
+
+        }
+      } else if (shouldLoop == true) {
+        if (positionCache == (playlist.length - 1)) {
+          _setCachedSong(0);
+        }  else {
+          _setCachedSong(positionCache + 1);
+        }
+      } else {
+        _setCachedSong(positionCache + 1);
+      }
+    });
+
     return shuffle;
   }
 
