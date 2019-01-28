@@ -159,6 +159,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     getAlbumSongs(displayList[index].data);
                   }
 
+                  if(displayList[index].type == 'artist') {
+                    getArtistAlbums(displayList[index].data);
+                  }
+
                   if(displayList[index].type == 'directory') {
                     getFileList(displayList[index].data);
                   }
@@ -224,6 +228,92 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       setState(() {
         displayList.add(
           new DisplayItem(e['name'], thisType, path.join(res['path'], e['name']), thisIcon, null)
+        );
+      });
+    });
+  }
+
+  Future<void> getArtists() async {
+    setState(() {
+      tabText = 'Artists';
+    });
+
+    if (currentServer < 0) {
+      Fluttertoast.showToast(
+        msg: "No Server Selected",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;      
+    }
+
+    Uri currentUri = Uri.parse(serverList[currentServer].url);
+    String url = currentUri.resolve('/db/artists').toString();
+    var response = await http.get(url, headers: { 'x-access-token': serverList[currentServer].jwt});
+    
+    if (response.statusCode > 299) {
+      Fluttertoast.showToast(
+        msg: "Call Failed",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 2,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;   
+    }
+
+    var res = jsonDecode(response.body);
+    displayList.clear();
+    res['artists'].forEach((e) {
+      print(e);
+      setState(() {
+        displayList.add(
+          new DisplayItem(e, 'artist', e, Icon(Icons.library_music), null)
+        );
+      });
+    });
+  }
+
+  Future<void> getArtistAlbums(String artist) async {
+    if (currentServer < 0) {
+      Fluttertoast.showToast(
+        msg: "No Server Selected",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;      
+    }
+
+    Uri currentUri = Uri.parse(serverList[currentServer].url);
+    String url = currentUri.resolve('/db/artists-albums').toString();
+    var response = await http.post(url, body: {"artist": artist}, headers: { 'x-access-token': serverList[currentServer].jwt});
+    
+    if (response.statusCode > 299) {
+      Fluttertoast.showToast(
+        msg: "Call Failed",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 2,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+      return;   
+    }
+
+    var res = jsonDecode(response.body);
+    displayList.clear();
+    res['albums'].forEach((e) {
+      print(e);
+      setState(() {
+        displayList.add(
+          new DisplayItem(e['name'], 'album', e['name'], Icon(Icons.album), null)
         );
       });
     });
@@ -446,7 +536,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         // Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
         setState(() {
           displayList.add(
-            new DisplayItem('Welcome To mStream', 'addServer', '', Icon(Icons.library_add), 'Click here to add server')
+            new DisplayItem('Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server')
           );
         });
       }
@@ -593,7 +683,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             new ListTile(
               title: new Text('Artists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
               leading: new Icon(Icons.library_music),
-              onTap: () {},
+              onTap: () {
+                getArtists();
+                Navigator.of(context).pop();
+                _tabController.animateTo(0);
+              },
             ),
             new ListTile(
               title: new Text('Local Files', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
@@ -930,6 +1024,9 @@ class ShareScreen extends StatelessWidget {
 }
 
 class SavePlaylistScreen extends StatelessWidget {
+  Server nullServer = new Server(null, null, null, null, null, null);
+  Server selectedServer = null;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -941,6 +1038,22 @@ class SavePlaylistScreen extends StatelessWidget {
         child: new ListView(
           children: [
             new Text('Save Playlist Goes Here',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            new DropdownButton(
+              hint: new Text("New Playlist"),
+              value: null,
+              onChanged: (Server newServer) {
+                selectedServer = newServer;
+              },
+              items: serverList.map((Server server) {
+                return new DropdownMenuItem<Server>(
+                  value: server,
+                  child: new Text(
+                    server.nickname,
+                    style: new TextStyle(color: Colors.black),
+                  ),
+                );
+              }).toList()
+            ),
           ]
         )
       )
