@@ -19,6 +19,7 @@ typedef void OnError(Exception exception);
 List<Server> serverList = new List();
 String tabText = 'File Explorer';
 int currentServer = -1;
+Map playlists = {};
 
 MstreamPlayer mStreamAudio = new MstreamPlayer();
 
@@ -358,7 +359,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       print(e);
       setState(() {
         displayList.add(
-          new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.album), null)
+          new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null)
         );
       });
     });
@@ -407,6 +408,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         );
       });
     });
+  }
+
+  Future<void> getAllPlaylistsForAllServers() async {
+
   }
 
   Future<void> getPlaylists() async {
@@ -532,6 +537,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       if (serverList.length > 0) {
         currentServer = 0;
         getFileList("");
+        getAllPlaylistsForAllServers();
       } else {
         // Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
         setState(() {
