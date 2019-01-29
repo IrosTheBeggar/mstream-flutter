@@ -116,7 +116,15 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     return new Column(children: <Widget>[
       new Row(children: <Widget>[
         new IconButton(icon: Icon(Icons.arrow_back), tooltip: 'Go Back', onPressed: () {
-          print('BACK');
+          if(displayCache.length > 1) {
+            displayCache.removeLast();
+            displayList.length = 0;
+            List<DisplayItem> newList = displayCache[displayCache.length - 1];
+            newList.forEach((e){
+              displayList.add(e);
+            });
+            setState(() {});
+          }
         }),
         new IconButton(icon: Icon(Icons.library_add), tooltip: 'Go Back', onPressed: () {
           displayList.forEach((element) {
@@ -184,7 +192,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     ]);
   }
 
-  Future<void> getFileList(String directory) async {
+  Future<void> getFileList(String directory, {bool wipeBackCache = false}) async {
     setState(() {
       tabText = 'File Explorer';
     });
@@ -217,24 +225,24 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       return;   
     }
 
-    print("Response status: ${response.statusCode}");
-    print("Response body: ${response.body}");
     var res = jsonDecode(response.body);
-    print(res['contents']);
+    if(wipeBackCache) {
+      displayCache.clear();
+    }
     displayList.clear();
+    List<DisplayItem> newList = new List();
     res['contents'].forEach((e) {
-      print(e);
       Icon thisIcon = e['type'] == 'directory' ? Icon(Icons.folder) : Icon(Icons.music_note);
       var thisType = (e['type'] == 'directory') ? 'directory' : 'file';
-      setState(() {
-        displayList.add(
-          new DisplayItem(e['name'], thisType, path.join(res['path'], e['name']), thisIcon, null)
-        );
-      });
+      DisplayItem newItem = new DisplayItem(e['name'], thisType, path.join(res['path'], e['name']), thisIcon, null);
+      displayList.add(newItem);
+      newList.add(newItem);
     });
+    displayCache.add(newList);
+    setState(() {});
   }
 
-  Future<void> getArtists() async {
+  Future<void> getArtists( {bool wipeBackCache = false}) async {
     setState(() {
       tabText = 'Artists';
     });
@@ -268,18 +276,22 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     var res = jsonDecode(response.body);
+    if(wipeBackCache) {
+      displayCache.clear();
+    }
     displayList.clear();
+    List<DisplayItem> newList = new List();
     res['artists'].forEach((e) {
-      print(e);
-      setState(() {
-        displayList.add(
-          new DisplayItem(e, 'artist', e, Icon(Icons.library_music), null)
-        );
-      });
+      DisplayItem newItem = new DisplayItem(e, 'artist', e, Icon(Icons.library_music), null);
+      displayList.add(newItem);
+      newList.add(newItem);
     });
+
+    displayCache.add(newList);
+    setState(() {});
   }
 
-  Future<void> getArtistAlbums(String artist) async {
+  Future<void> getArtistAlbums(String artist, {bool wipeBackCache = false}) async {
     if (currentServer < 0) {
       Fluttertoast.showToast(
         msg: "No Server Selected",
@@ -310,17 +322,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
     var res = jsonDecode(response.body);
     displayList.clear();
+    List<DisplayItem> newList = new List();
     res['albums'].forEach((e) {
-      print(e);
-      setState(() {
-        displayList.add(
-          new DisplayItem(e['name'], 'album', e['name'], Icon(Icons.album), null)
-        );
-      });
+      DisplayItem newItem = new DisplayItem(e['name'], 'album', e['name'], Icon(Icons.album), null);
+      displayList.add(newItem);
+      newList.add(newItem);
     });
+
+    displayCache.add(newList);
+    setState(() {});
   }
 
-  Future<void> getAlbumSongs(String album) async {
+  Future<void> getAlbumSongs(String album, {bool wipeBackCache = false}) async {
     setState(() {
       tabText = 'Albums';
     });
@@ -355,17 +368,21 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
     var res = jsonDecode(response.body);
     displayList.clear();
+    if(wipeBackCache) {
+      displayCache.clear();
+    }
+    List<DisplayItem> newList = new List();
     res.forEach((e) {
-      print(e);
-      setState(() {
-        displayList.add(
-          new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null)
-        );
-      });
+      DisplayItem newItem = new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
+      displayList.add(newItem);
+      newList.add(newItem);
     });
+
+    displayCache.add(newList);
+    setState(() {});
   }
 
-  Future<void> getAllAlbums() async {
+  Future<void> getAllAlbums({bool wipeBackCache = false}) async {
     setState(() {
       tabText = 'Albums';
     });
@@ -400,21 +417,25 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
     var res = jsonDecode(response.body);
     displayList.clear();
+    if(wipeBackCache) {
+      displayCache.clear();
+    }
+    List<DisplayItem> newList = new List();
     res['albums'].forEach((e) {
-      print(e);
-      setState(() {
-        displayList.add(
-          new DisplayItem(e['name'], 'album', e['name'], Icon(Icons.album), null)
-        );
-      });
+      DisplayItem newItem = new DisplayItem(e['name'], 'album', e['name'], Icon(Icons.album), null);
+      displayList.add(newItem);
+      newList.add(newItem);
     });
+
+    displayCache.add(newList);
+    setState(() {});
   }
 
   Future<void> getAllPlaylistsForAllServers() async {
 
   }
 
-  Future<void> getPlaylists() async {
+  Future<void> getPlaylists({bool wipeBackCache = false}) async {
     setState(() {
       tabText = 'Playlists';
     });
@@ -449,14 +470,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
     var res = jsonDecode(response.body);
     displayList.clear();
+    if(wipeBackCache) {
+      displayCache.clear();
+    }
+    List<DisplayItem> newList = new List();
     res.forEach((e) {
-      print(e);
-      setState(() {
-        displayList.add(
-          new DisplayItem(e['name'], 'playlist', e['name'], Icon(Icons.queue_music), null)
-        );
-      });
+      DisplayItem newItem = new DisplayItem(e['name'], 'playlist', e['name'], Icon(Icons.queue_music), null);
+      displayList.add(newItem);
+      newList.add(newItem);
     });
+
+    displayCache.add(newList);
+    setState(() {});
   }
 
   Future<void> getPlaylist(String playlist) async {
@@ -491,18 +516,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
     var res = jsonDecode(response.body);
     displayList.clear();
+    List<DisplayItem> newList = new List();
     res.forEach((e) {
-      setState(() {
-        displayList.add(
-          // TODO: Handle Metadata
-          // TODO: Properly build URL
-          new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null)
-        );
-      });
+      DisplayItem newItem = new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
+      displayList.add(newItem);
+      newList.add(newItem);
     });
+
+    displayCache.add(newList);
+    setState(() {});
   }
 
-  Future<List>  readServerList() async {
+  Future<List> readServerList() async {
     try {
       final file = await _serverFile;
 
@@ -601,195 +626,213 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     // 
   }
 
+  Future<bool> _onWillPop() {
+    if (displayCache.length > 1) {
+      displayCache.removeLast();
+      displayList.length = 0;
+      List<DisplayItem> newList = displayCache[displayCache.length - 1];
+      newList.forEach((e){
+        displayList.add(e);
+      });
+      setState(() {});
+      return new Future.value(false);
+    } else {
+      return new Future.value(true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: Add a status bar to side menu.  Use it to display available space
-    return Scaffold(
-      appBar: AppBar(
-        bottom: TabBar(
-          tabs: [
-            Tab(text: tabText),
-            Tab(text: 'Now Playing'),
-          ],
-          controller: _tabController,
-        ),
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('mStream',),
-            Visibility(
-              visible: currentServer < 0 ? false : true,
-              child: Text(
-                currentServer < 0 ? '' : (serverList[currentServer].nickname.length > 0 ? serverList[currentServer].nickname: serverList[currentServer].url),
-                style: TextStyle(fontSize: 12.0),
-              ),
-            ),
-          ],
-        ),
-        actions: <Widget> [
-          new PopupMenuButton(
-            onSelected: (Server selectedServer) { 
-              setState(() {
-                currentServer = serverList.indexOf(selectedServer);             
-              });
-            },
-            icon: new Icon(Icons.cloud),
-            itemBuilder: (BuildContext context) { 
-              return serverList.map((server) {
-                return new PopupMenuItem(
-                  value: server,
-                  child: new Text(server.nickname.length > 0 ? server.nickname : server.url, style: new TextStyle(color: Colors.black)),
-                );
-              }).toList();
-            },
+    return new WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: AppBar(
+          bottom: TabBar(
+            tabs: [
+              Tab(text: tabText),
+              Tab(text: 'Now Playing'),
+            ],
+            controller: _tabController,
           ),
-          new IconButton (
-            icon: new Icon(Icons.add),
-            onPressed: (){
-              Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()));
-            }
-          ),
-        ]
-      ),
-      drawer: new Drawer(
-        child: new ListView(
-          physics: const NeverScrollableScrollPhysics(),
-          children: <Widget> [
-            new DrawerHeader(
-              child: new Image(image: AssetImage('graphics/mstream-logo.png')),
-            ),
-            new ListTile(
-              leading: new Icon(Icons.folder),
-              title: new Text('File Explorer', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17),),
-              onTap: () {
-                getFileList("");
-                Navigator.of(context).pop();
-                _tabController.animateTo(0);
-              },
-            ),
-            new ListTile(
-              title: new Text('Playlists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-              leading: new Icon(Icons.queue_music),
-              onTap: () {
-                getPlaylists();
-                Navigator.of(context).pop();
-                _tabController.animateTo(0);
-              },
-            ),
-            new ListTile(
-              title: new Text('Albums', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-              leading: new Icon(Icons.album),
-              onTap: () {
-                getAllAlbums();
-                Navigator.of(context).pop();
-                _tabController.animateTo(0);
-              },
-            ),
-            new ListTile(
-              title: new Text('Artists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-              leading: new Icon(Icons.library_music),
-              onTap: () {
-                getArtists();
-                Navigator.of(context).pop();
-                _tabController.animateTo(0);
-              },
-            ),
-            new ListTile(
-              title: new Text('Local Files', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-              leading: new Icon(Icons.folder_open),
-              onTap: () {},
-            ),
-            new ListTile(
-              title: new Text('Manage Servers', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-              leading: new Icon(Icons.router),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageServersScreen()), );
-              },
-            ),
-            new Divider(),
-            new ListTile(
-              title: new Text('About mStream', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-              leading: new Icon(Icons.equalizer),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.push(context, MaterialPageRoute(builder: (context) => AboutScreen()));
-              },
-            ),
-          ],
-        )
-      ),
-      body: TabBarView(
-        children: [localFile(), advanced()],
-        controller: _tabController
-      ),
-      bottomNavigationBar: BottomAppBar(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            GestureDetector(
-              onTapUp: (TapUpDetails details) {
-                var distance = details;
-                double width = MediaQuery.of(context).size.width;
-                print(width.toString());
-                print(distance.globalPosition.dx);
-
-                double percentage = distance.globalPosition.dx / width;
-                print(percentage);
-                mStreamAudio.seekByPercentage(percentage);
-              },
-              child: Container(
-                height: 16,
-                child: LinearProgressIndicator(
-                  value: mStreamAudio.currentTime != null && mStreamAudio.currentTime > 0
-                          ? mStreamAudio.currentTime /mStreamAudio.duration
-                          : 0.0,
-                  valueColor: new AlwaysStoppedAnimation(Colors.grey[300]),
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('mStream',),
+              Visibility(
+                visible: currentServer < 0 ? false : true,
+                child: Text(
+                  currentServer < 0 ? '' : (serverList[currentServer].nickname.length > 0 ? serverList[currentServer].nickname: serverList[currentServer].url),
+                  style: TextStyle(fontSize: 12.0),
                 ),
               ),
+            ],
+          ),
+          actions: <Widget> [
+            new PopupMenuButton(
+              onSelected: (Server selectedServer) { 
+                setState(() {
+                  currentServer = serverList.indexOf(selectedServer);             
+                });
+              },
+              icon: new Icon(Icons.cloud),
+              itemBuilder: (BuildContext context) { 
+                return serverList.map((server) {
+                  return new PopupMenuItem(
+                    value: server,
+                    child: new Text(server.nickname.length > 0 ? server.nickname : server.url, style: new TextStyle(color: Colors.black)),
+                  );
+                }).toList();
+              },
             ),
-            Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Row(
-                  children: [            
-                    IconButton(icon: Icon(Icons.skip_previous), onPressed: () {
-                      setState(() {
-                        mStreamAudio.previousSong();
-                      });
-                    }),
-                    IconButton(icon: (mStreamAudio.playing == false) ? Icon(Icons.play_circle_outline) : Icon(Icons.pause_circle_outline), onPressed: () {
-                      setState(() {
-                        mStreamAudio.playPause();
-                      });
-                    }),
-                    IconButton(icon: Icon(Icons.skip_next), onPressed: () {
-                      setState(() {
-                        mStreamAudio.nextSong();
-                      });
-                    }),
-                  ]
-                ),
-                Row(
-                  children: [            
-                    IconButton(icon: Icon(Icons.repeat, color: (mStreamAudio.shouldLoop == true) ? Colors.lightBlueAccent : Colors.black), onPressed: () {
-                      setState(() {
-                        mStreamAudio.toggleRepeat();
-                      });
-                    }),
-                    IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.lightBlueAccent : Colors.black, onPressed: () {
-                      setState(() {
-                        mStreamAudio.toggleShuffle();
-                      });
-                    }),
-                    IconButton(icon: Icon(Icons.speaker), onPressed: () {},),
-                  ]
-                ),
-              ],
+            new IconButton (
+              icon: new Icon(Icons.add),
+              onPressed: (){
+                Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()));
+              }
             ),
           ]
+        ),
+        drawer: new Drawer(
+          child: new ListView(
+            physics: const NeverScrollableScrollPhysics(),
+            children: <Widget> [
+              new DrawerHeader(
+                child: new Image(image: AssetImage('graphics/mstream-logo.png')),
+              ),
+              new ListTile(
+                leading: new Icon(Icons.folder),
+                title: new Text('File Explorer', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17),),
+                onTap: () {
+                  getFileList("", wipeBackCache: true);
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(0);
+                },
+              ),
+              new ListTile(
+                title: new Text('Playlists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: new Icon(Icons.queue_music),
+                onTap: () {
+                  getPlaylists(wipeBackCache: true);
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(0);
+                },
+              ),
+              new ListTile(
+                title: new Text('Albums', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: new Icon(Icons.album),
+                onTap: () {
+                  getAllAlbums(wipeBackCache: true);
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(0);
+                },
+              ),
+              new ListTile(
+                title: new Text('Artists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: new Icon(Icons.library_music),
+                onTap: () {
+                  getArtists(wipeBackCache: true);
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(0);
+                },
+              ),
+              new ListTile(
+                title: new Text('Local Files', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: new Icon(Icons.folder_open),
+                onTap: () {},
+              ),
+              new ListTile(
+                title: new Text('Manage Servers', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: new Icon(Icons.router),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => ManageServersScreen()), );
+                },
+              ),
+              new Divider(),
+              new ListTile(
+                title: new Text('About mStream', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: new Icon(Icons.equalizer),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => AboutScreen()));
+                },
+              ),
+            ],
+          )
+        ),
+        body: TabBarView(
+          children: [localFile(), advanced()],
+          controller: _tabController
+        ),
+        bottomNavigationBar: BottomAppBar(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              GestureDetector(
+                onTapUp: (TapUpDetails details) {
+                  var distance = details;
+                  double width = MediaQuery.of(context).size.width;
+                  print(width.toString());
+                  print(distance.globalPosition.dx);
+
+                  double percentage = distance.globalPosition.dx / width;
+                  print(percentage);
+                  mStreamAudio.seekByPercentage(percentage);
+                },
+                child: Container(
+                  height: 16,
+                  child: LinearProgressIndicator(
+                    value: mStreamAudio.currentTime != null && mStreamAudio.currentTime > 0
+                            ? mStreamAudio.currentTime /mStreamAudio.duration
+                            : 0.0,
+                    valueColor: new AlwaysStoppedAnimation(Colors.grey[300]),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Row(
+                    children: [            
+                      IconButton(icon: Icon(Icons.skip_previous), onPressed: () {
+                        setState(() {
+                          mStreamAudio.previousSong();
+                        });
+                      }),
+                      IconButton(icon: (mStreamAudio.playing == false) ? Icon(Icons.play_circle_outline) : Icon(Icons.pause_circle_outline), onPressed: () {
+                        setState(() {
+                          mStreamAudio.playPause();
+                        });
+                      }),
+                      IconButton(icon: Icon(Icons.skip_next), onPressed: () {
+                        setState(() {
+                          mStreamAudio.nextSong();
+                        });
+                      }),
+                    ]
+                  ),
+                  Row(
+                    children: [            
+                      IconButton(icon: Icon(Icons.repeat, color: (mStreamAudio.shouldLoop == true) ? Colors.lightBlueAccent : Colors.black), onPressed: () {
+                        setState(() {
+                          mStreamAudio.toggleRepeat();
+                        });
+                      }),
+                      IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.lightBlueAccent : Colors.black, onPressed: () {
+                        setState(() {
+                          mStreamAudio.toggleShuffle();
+                        });
+                      }),
+                      IconButton(icon: Icon(Icons.speaker), onPressed: () {},),
+                    ]
+                  ),
+                ],
+              ),
+            ]
+          )
         )
       )
     );
