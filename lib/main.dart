@@ -154,8 +154,6 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 title: Text(displayList[index].name),
                 subtitle: displayList[index].subtext == null ? null : Text(displayList[index].subtext),
                 onTap: () {
-                  print(displayList[index].data);
-                  print(displayList[index].name);
                   if(displayList[index].type == 'file') {
                     Uri url = Uri.parse(serverList[currentServer].url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
                     QueueItem newItem = new QueueItem(displayList[index].name, url.toString(), null, null, null, null, null, null, null, null, null);
@@ -900,21 +898,44 @@ class MyCustomFormState extends State<MyCustomForm> {
   }
 
   saveServer(String origin, [String jwt='']) {
-    Server woo = new Server(origin, this._serverName, this._username, this._password, jwt, this._serverName);
-    serverList.add(woo);
-    
-    currentServer = serverList.length - 1;
+    bool shouldUpdate = false;
+    try {
+      serverList[editThisServer];
+      shouldUpdate = true;
+    } catch (err) {
+
+    }
+
+    if(shouldUpdate) {
+      serverList[editThisServer].url = _url;
+      serverList[editThisServer].nickname = _serverName;
+      serverList[editThisServer].password = _password;
+      serverList[editThisServer].username = _username;
+    }else {
+      Server woo = new Server(origin, this._serverName, this._username, this._password, jwt, this._serverName);
+      serverList.add(woo);
+      
+      currentServer = serverList.length - 1;
+    }
 
     // Save Server List
     writeServerFile();
     Navigator.pop(context);
-
-    print(serverList);
   }
 
   @override
   Widget build(BuildContext context) {
     // Build a Form widget using the _formKey we created above
+    try {
+      serverList[editThisServer];
+      _url = serverList[editThisServer].url;
+      _username = serverList[editThisServer].username;
+      _password = serverList[editThisServer].password;
+      _serverName = serverList[editThisServer].nickname;
+    } catch (err) {
+      
+    }
+
     return new Container(
       padding: new EdgeInsets.all(20.0),
       child: Form(
@@ -923,6 +944,7 @@ class MyCustomFormState extends State<MyCustomForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             TextFormField(
+              initialValue: _serverName,
               validator: (value) {
 
               },
@@ -936,6 +958,7 @@ class MyCustomFormState extends State<MyCustomForm> {
               }
             ),
             TextFormField(
+              initialValue: _url,
               validator: (value) {
                 if (value.isEmpty) {
                   return 'Server URL is needed';
@@ -959,6 +982,7 @@ class MyCustomFormState extends State<MyCustomForm> {
               }
             ),
             TextFormField(
+              initialValue: _username,
               validator: (value) {
 
               },
@@ -972,6 +996,7 @@ class MyCustomFormState extends State<MyCustomForm> {
               }
             ),
             TextFormField(
+              initialValue: _password,              
               validator: (value) {
 
               },
@@ -1022,9 +1047,22 @@ class MyCustomFormState extends State<MyCustomForm> {
 class AddServerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    editThisServer = null;
     return Scaffold(
       appBar: AppBar(
         title: Text("Add Server"),
+      ),
+      body: MyCustomForm()
+    );
+  }
+}
+
+class EditServerScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Edit Server"),
       ),
       body: MyCustomForm()
     );
@@ -1110,6 +1148,7 @@ class SavePlaylistScreen extends StatelessWidget {
   }
 }
 
+int editThisServer;
 class ManageServersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1117,13 +1156,73 @@ class ManageServersScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text("Manage Servers"),
       ),
-      body: new Container(
-        padding: new EdgeInsets.all(40.0),
-        child: new ListView(
-          children: [
-            new Text('Manage Servers',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-          ]
-        )
+      body: new Row(
+        children: [Expanded(
+          child: SizedBox(
+            child: new ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics (),
+              itemCount: serverList.length,
+              itemBuilder: (BuildContext context, int index) {
+                return new ListTile(
+                  title: Text(serverList[index].nickname),
+                  subtitle:  Text(serverList[index].url),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children:[
+                      IconButton(icon: Icon(Icons.edit), tooltip: 'Edit Server', onPressed: () {
+                        editThisServer = index;
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => EditServerScreen()), );
+                      }),
+                      IconButton(
+                        icon: Icon(Icons.delete_forever),
+                        tooltip: 'Delete Server',
+                        onPressed: () { 
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              // return object of type Dialog
+                              return AlertDialog(
+                                title: new Text("Confirm Remove Server"),
+                                content: Row(children: <Widget>[
+                                  new Checkbox(value: false, onChanged: (bool value) {
+                                  
+                                  }),
+                                  new Flexible(child: Text("Remove synced files from device?"))
+                                ]),
+                                actions: <Widget>[
+                                  new FlatButton(
+                                    child: new Text("Go Back"),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  new FlatButton(
+                                    child: new Text("Delete", style: TextStyle(color: Colors.red),),
+                                    onPressed: () {
+                                      try {
+                                        serverList[index];
+                                        // setState(() {
+                                        //   serverList.removeAt(index);
+                                        // }); // TODO:
+                                      } catch(err) {
+                                        // TODO: Handle Error?
+                                      }
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              }
+            )
+          ),
+        )]
       )
     );
   }

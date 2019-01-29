@@ -8,20 +8,20 @@ Currently Flutter does not have a way to handle background audio for iOS.  If yo
 
 # Features Todo List
 
-### High Priorty
+### High Priority
 * Sometimes the now playing song highlight doesn't update on song change + progress bar doesn't update until user event *
 * Save Playlist
 * Metadata Features & Album Art
 * Sync Files Locally
-* Edit & Remove Servers
-* Back button doesn't work *
 * Implement the audio_service library
 * Player Error Handling
 
-### Low Prioroity
+### Low Priority
 * Share Playlist
 * Auto DJ
 * Add individual song to playlist
 * Browse Local Files
 * Search Feature
 * Star Ratings
+* Re-arrange queue
+* Clicking on the cloud button before adding a server throws an exception
