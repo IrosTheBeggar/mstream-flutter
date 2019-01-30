@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/material.dart';
 
 import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'player_widget.dart';
 import 'dart:math';
 import 'objects/queue_item.dart';
 import 'package:mstream_flutter/objects/player_object.dart';
@@ -13,6 +13,16 @@ class MstreamPlayer {
   int positionCache = -1;
   List<QueueItem> playlist = new List();
   int cacheTimeout = 16;
+
+  ValueNotifier rpf;
+  setFlag(ValueNotifier flag){
+    rpf = flag;
+  }
+
+  // ValueNotifier rpf2;
+  // setFlag2(flag) {
+  //   rpf2 = flag;
+  // }
 
   editSongMetadata() {
     // Stage 1
@@ -305,8 +315,8 @@ class MstreamPlayer {
   }
 
   var playbackRate = 1;
-  int duration = 0;
-  int currentTime = 0;
+  // Duration duration;
+  Duration currentTime;
   bool playing = false;
   // var volume = 100;
 
@@ -325,8 +335,11 @@ class MstreamPlayer {
     var otherPlayerObject = getOtherPlayer();
 
     // Reset Duration
-    duration = 0;
-    currentTime = 0;
+    // duration = new Duration(seconds: 0);
+    currentTime = new Duration(seconds: 0);
+    // if(rpf2 != null) {
+    //   rpf2.value(0.0);
+    // }
 
     if (localPlayerObject.playerType == 'default') {
       localPlayerObject.playerObject.release();
@@ -347,12 +360,16 @@ class MstreamPlayer {
     // newOtherPlayerObject.playerType = null;
     // newOtherPlayerObject.playerObject = null;
     newOtherPlayerObject.songObject = null;
-    newOtherPlayerObject.playerObject.durationHandler = (Duration d) {
-      return;
-    };
-    newOtherPlayerObject.playerObject.positionHandler = (Duration  p) {
-      return;
-    };
+    // newOtherPlayerObject.playerObject.durationHandler = (Duration d) {
+    //   return;
+    // };
+    // newOtherPlayerObject.playerObject.positionHandler = (Duration  p) {
+    //   return;
+    // };
+    
+    if(rpf != null) {
+      rpf.value = !rpf.value;
+    }
 
     // Cache next song
     // The timer prevents excessive caching when the user starts button mashing
@@ -462,11 +479,25 @@ class MstreamPlayer {
     };
 
     player.playerObject.durationHandler = (Duration d) {
-      duration = d.inSeconds;
+      print('DURATION!!!!');
+      // duration = d;
+      player.duration = d;
     };
 
     player.playerObject.positionHandler = (Duration  p) {
-      currentTime = p.inSeconds;
+      currentTime = p;
+      player.postion = p;
+      if(rpf != null) {
+        // rpf2.value = currentTime;
+        rpf.value = !rpf.value; // TODO: This is hacky as fuck
+      }
+      // print(currentTime.inMilliseconds);
+      // print(duration.inMilliseconds);
+
+    };
+
+    player.playerObject.audioPlayerStateChangeHandler = (AudioPlayerState state) {
+      print(state);
     };
 
     player.songObject = song;
@@ -492,15 +523,20 @@ class MstreamPlayer {
     // Stage 2
   }
 
+  Duration getDuration() {
+    PlayerObjectX p = getCurrentPlayer();
+    return p.duration;
+  }
+
   seekByPercentage(double percentageAsDecimal) {
-    if(duration == 0) {
+    if(getDuration().inMilliseconds == 0) {
       return;
     }
 
     var lPlayer = getCurrentPlayer();
     if (lPlayer.playerType == 'default') {
-      double seektime = (percentageAsDecimal * duration);
-      lPlayer.playerObject.seek(new Duration(seconds: seektime.toInt()));
+      double seektime = (percentageAsDecimal * getDuration().inMilliseconds);
+      lPlayer.playerObject.seek(new Duration(milliseconds: seektime.toInt()));
     }
   }
 

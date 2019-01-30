@@ -16,15 +16,17 @@ import 'objects/queue_item.dart';
 
 typedef void OnError(Exception exception);
 
-List<List<DisplayItem>> displayCache = new List();
-List<DisplayItem> displayList = new List();
-List<Server> serverList = new List();
+final List<List<DisplayItem>> displayCache = new List();
+final List<DisplayItem> displayList = new List();
+final List<Server> serverList = new List();
 String tabText = 'File Explorer';
 int currentServer = -1;
 Map playlists = {};
 
 int editThisServer;
 final ValueNotifier redrawServerFlag = ValueNotifier(false);
+final ValueNotifier redrawPlaylistFlag = ValueNotifier(false);
+// final ValueNotifier positionBar = ValueNotifier();
 
 MstreamPlayer mStreamAudio = new MstreamPlayer();
 
@@ -54,7 +56,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   TabController _tabController;
   String localFilePath;
 
-  _myCallback() {
+  _setState() {
+    setState(() {});
+  }
+
+  _goToNavScreen() {
     _tabController.animateTo(0);
     tabText = 'Go To';
     
@@ -610,7 +616,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = new TabController(vsync: this, length: 2);
-    redrawServerFlag.addListener(_myCallback);
+    redrawServerFlag.addListener(_goToNavScreen);
+    redrawPlaylistFlag.addListener(_setState);
+    mStreamAudio.setFlag(redrawPlaylistFlag);
+    // mStreamAudio.setFlag2(positionBar);
 
     // Load Servers
     readServerList().then((List contents) {
@@ -624,7 +633,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
       if (serverList.length > 0) {
         currentServer = 0;
-        getFileList("");
+        _goToNavScreen();
+        // getFileList("");
         getAllPlaylistsForAllServers();
       } else {
         setState(() {
@@ -869,9 +879,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 child: Container(
                   height: 16,
                   child: LinearProgressIndicator(
-                    value: mStreamAudio.currentTime != null && mStreamAudio.currentTime > 0
-                            ? mStreamAudio.currentTime /mStreamAudio.duration
+                    value: mStreamAudio.currentTime != null && mStreamAudio.currentTime.inMilliseconds > 0 && mStreamAudio.getDuration().inMilliseconds > 0
+                            ? mStreamAudio.currentTime.inMilliseconds /mStreamAudio.getDuration().inMilliseconds
                             : 0.0,
+                    // value: positionBar.value,
                     valueColor: new AlwaysStoppedAnimation(Colors.grey[300]),
                   ),
                 ),
