@@ -16,10 +16,15 @@ import 'objects/queue_item.dart';
 
 typedef void OnError(Exception exception);
 
+List<List<DisplayItem>> displayCache = new List();
+List<DisplayItem> displayList = new List();
 List<Server> serverList = new List();
 String tabText = 'File Explorer';
 int currentServer = -1;
 Map playlists = {};
+
+int editThisServer;
+final ValueNotifier redrawServerFlag = ValueNotifier(false);
 
 MstreamPlayer mStreamAudio = new MstreamPlayer();
 
@@ -47,10 +52,30 @@ class ExampleApp extends StatefulWidget {
 
 class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateMixin {
   TabController _tabController;
-
   String localFilePath;
-  List<DisplayItem> displayList = new List();
-  List<List<DisplayItem>> displayCache = new List();
+
+  _myCallback() {
+    _tabController.animateTo(0);
+    tabText = 'Go To';
+    
+    displayCache.clear();
+    displayList.clear();
+    List<DisplayItem> newList = new List();
+    DisplayItem newItem1 = new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null);
+    DisplayItem newItem2 = new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
+    DisplayItem newItem3 = new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
+    DisplayItem newItem4 = new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
+
+    displayList.add(newItem1);
+    newList.add(newItem1);
+    displayList.add(newItem2);
+    newList.add(newItem2);
+    displayList.add(newItem3);
+    newList.add(newItem3);
+    displayList.add(newItem4);
+    newList.add(newItem4);
+    displayCache.add(newList);
+  }
 
   Widget advanced() {
     return new Column(children: <Widget>[
@@ -181,6 +206,19 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   if(displayList[index].type == 'playlist') {
                     getPlaylist(displayList[index].data);
                   }
+
+                  if(displayList[index].type == 'execAction' && displayList[index].data =='fileExplorer') {
+                    getFileList("", wipeBackCache: false);                  
+                  }
+                  if(displayList[index].type == 'execAction' && displayList[index].data =='playlists') {
+                    getPlaylists(wipeBackCache: false);
+                  }
+                  if(displayList[index].type == 'execAction' && displayList[index].data =='artists') {
+                    getArtists(wipeBackCache: false);
+                  }
+                  if(displayList[index].type == 'execAction' && displayList[index].data =='albums') {
+                    getAllAlbums(wipeBackCache: false);
+                  }
                 },
               );
             }
@@ -226,6 +264,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     var res = jsonDecode(response.body);
     if(wipeBackCache) {
       displayCache.clear();
+      List<DisplayItem> newList = new List();
+      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
+      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
+      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
+      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
+      displayCache.add(newList);
     }
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -276,6 +320,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     var res = jsonDecode(response.body);
     if(wipeBackCache) {
       displayCache.clear();
+      List<DisplayItem> newList = new List();
+      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
+      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
+      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
+      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
+      displayCache.add(newList);
     }
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -368,6 +418,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     if(wipeBackCache) {
       displayCache.clear();
+      List<DisplayItem> newList = new List();
+      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
+      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
+      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
+      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
+      displayCache.add(newList);
     }
     List<DisplayItem> newList = new List();
     res.forEach((e) {
@@ -417,6 +473,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     if(wipeBackCache) {
       displayCache.clear();
+      List<DisplayItem> newList = new List();
+      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
+      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
+      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
+      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
+      displayCache.add(newList);
     }
     List<DisplayItem> newList = new List();
     res['albums'].forEach((e) {
@@ -470,6 +532,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     if(wipeBackCache) {
       displayCache.clear();
+      List<DisplayItem> newList = new List();
+      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
+      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
+      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
+      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
+      displayCache.add(newList);
     }
     List<DisplayItem> newList = new List();
     res.forEach((e) {
@@ -542,35 +610,30 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = new TabController(vsync: this, length: 2);
+    redrawServerFlag.addListener(_myCallback);
 
     // Load Servers
     readServerList().then((List contents) {
-      print(contents);
       // contents = []; // This line will reset the server list to empty on boot
       contents.forEach((f) {
-        print(f);
         var newServer = Server.fromJson(f);
         setState(() {
           serverList.add(newServer);
         });
       });
 
-      print(serverList);
-
       if (serverList.length > 0) {
         currentServer = 0;
         getFileList("");
         getAllPlaylistsForAllServers();
       } else {
-        // Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
         setState(() {
+          tabText = 'Welcome';
           displayList.add(
             new DisplayItem('Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server')
           );
         });
       }
-
-      print(currentServer);
     });
 
     FlutterDownloader.registerCallback((id, status, progress) {
@@ -583,6 +646,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   @override
   void dispose() {
     _tabController.dispose();
+    redrawServerFlag.dispose();
     FlutterDownloader.registerCallback(null);
     super.dispose();
   }
@@ -669,10 +733,33 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           ),
           actions: <Widget> [
             new PopupMenuButton(
-              onSelected: (Server selectedServer) { 
-                setState(() {
-                  currentServer = serverList.indexOf(selectedServer);             
-                });
+              onSelected: (Server selectedServer) {
+                if(currentServer != serverList.indexOf(selectedServer)) {
+                  _tabController.animateTo(0);
+                  tabText = 'Go To';
+                  
+                  displayCache.clear();
+                  displayList.clear();
+                  List<DisplayItem> newList = new List();
+                  DisplayItem newItem1 = new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null);
+                  DisplayItem newItem2 = new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
+                  DisplayItem newItem3 = new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
+                  DisplayItem newItem4 = new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
+
+                  displayList.add(newItem1);
+                  newList.add(newItem1);
+                  displayList.add(newItem2);
+                  newList.add(newItem2);
+                  displayList.add(newItem3);
+                  newList.add(newItem3);
+                  displayList.add(newItem4);
+                  newList.add(newItem4);
+                  displayCache.add(newList);
+
+                  setState(() {
+                    currentServer = serverList.indexOf(selectedServer);             
+                  });
+                }
               },
               icon: new Icon(Icons.cloud),
               itemBuilder: (BuildContext context) { 
@@ -916,6 +1003,7 @@ class MyCustomFormState extends State<MyCustomForm> {
       serverList.add(woo);
       
       currentServer = serverList.length - 1;
+      redrawServerFlag.value = !redrawServerFlag.value;
     }
 
     // Save Server List
@@ -1148,8 +1236,15 @@ class SavePlaylistScreen extends StatelessWidget {
   }
 }
 
-int editThisServer;
-class ManageServersScreen extends StatelessWidget {
+class ManageServersScreen extends StatefulWidget {
+  @override
+  ManageServersScreenSatate createState() {
+    return ManageServersScreenSatate();
+  }
+}
+
+// TODO: Delete files on delete server
+class ManageServersScreenSatate extends State<ManageServersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1201,11 +1296,32 @@ class ManageServersScreen extends StatelessWidget {
                                     onPressed: () {
                                       try {
                                         serverList[index];
-                                        // setState(() {
-                                        //   serverList.removeAt(index);
-                                        // }); // TODO:
+                                        serverList.removeAt(index);
+                                        setState(() {
+                                        });
+                                        writeServerFile();
+
+                                        // Handle case were all servers are removed
+                                        if (serverList.length == 0) {
+                                          tabText = 'Welcome';
+                                          displayList.clear();
+                                          displayCache.clear();
+                                          displayList.add(new DisplayItem('Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server'));
+                                          setState(() {
+                                            currentServer = -1;
+                                          });
+                                        } else if(currentServer == index) { // Handle case where user removes the current server
+                                          redrawServerFlag.value = !redrawServerFlag.value;
+                                          setState(() {
+                                            currentServer = 0;
+                                          });
+                                        }else if (currentServer > index) { // Handle case where curent server is after remoced index
+                                          setState(() {
+                                            currentServer = currentServer -1;
+                                          });
+                                        }
                                       } catch(err) {
-                                        // TODO: Handle Error?
+
                                       }
                                       Navigator.of(context).pop();
                                     },
