@@ -6,6 +6,8 @@ var uuid = new Uuid();
 class QueueItem {
   String filename;
   String url;
+  String path;
+
   String artist;
   String album;
   String title;
@@ -19,11 +21,12 @@ class QueueItem {
   final String uuidString = uuid.v4();
   final Server server;
 
-  QueueItem(this.server, this.filename, this.url, this.artist, this.album, this.title, this. track, this.disc, this.year, this.hash, this.rating, this.albumArt );
+  QueueItem(this.server, this.filename, this.url, this.path, this.artist, this.album, this.title, this. track, this.disc, this.year, this.hash, this.rating, this.albumArt );
 
   QueueItem.fromJson(Map<String, dynamic> json)
     : filename = json['filename'],
       url = json['url'],
+      path = json['path'],
       server = json['server'],
       artist = json['artist'],
       album = json['album'],
@@ -39,6 +42,7 @@ class QueueItem {
     {
       'filename': filename,
       'url': url,
+      'path': path,
       'server': server,      
       'artist': artist,
       'album': album,

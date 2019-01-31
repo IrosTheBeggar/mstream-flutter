@@ -63,7 +63,6 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   _goToNavScreen() {
     _tabController.animateTo(0);
     tabText = 'Go To';
-    print(currentServer);
     
     displayCache.clear();
     displayList.clear();
@@ -160,8 +159,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         new IconButton(icon: Icon(Icons.library_add), tooltip: 'Go Back', onPressed: () {
           displayList.forEach((element) {
             if (element.type == 'file') {
-              Uri url = Uri.parse(serverList[currentServer].url + '/media' + element.data + '?token=' + serverList[currentServer].jwt );
-              QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), null, null, null, null, null, null, null, null, null);
+              Uri url = Uri.parse(element.server.url + '/media' + element.data + '?token=' + element.server.jwt );
+              QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, null, null, null, null, null, null, null, null, null);
               setState(() {
                 mStreamAudio.addSong(newItem);
               });
@@ -179,7 +178,6 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             physics: const AlwaysScrollableScrollPhysics (),
             itemCount: displayList.length,
             itemBuilder: (BuildContext context, int index) {
-              print(displayList[index]);
               return new ListTile(
                 leading: displayList[index].icon == null ? null : displayList[index].icon,
                 title: Text(displayList[index].name),
@@ -187,7 +185,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 onTap: () {
                   if(displayList[index].type == 'file') {
                     Uri url = Uri.parse(displayList[index].server.url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
-                    QueueItem newItem = new QueueItem(displayList[index].server, displayList[index].name, url.toString(), null, null, null, null, null, null, null, null, null);
+                    QueueItem newItem = new QueueItem(displayList[index].server, displayList[index].name, url.toString(), displayList[index].data, null, null, null, null, null, null, null, null, null);
                     setState(() {
                       mStreamAudio.addSong(newItem);
                     });
@@ -696,11 +694,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 onTapUp: (TapUpDetails details) {
                   var distance = details;
                   double width = MediaQuery.of(context).size.width;
-                  print(width.toString());
-                  print(distance.globalPosition.dx);
-
                   double percentage = distance.globalPosition.dx / width;
-                  print(percentage);
                   mStreamAudio.seekByPercentage(percentage);
                 },
                 child: Container(
@@ -805,7 +799,6 @@ class MyCustomFormState extends State<MyCustomForm> {
     // Try logging in
     try {
       response = await http.post(lol.resolve('/login').toString(), body: {"username": this._username, "password": this._password});
-      print(response);
     } catch(err) {
       Scaffold.of(context).showSnackBar(SnackBar(content: Text('Failed to Login')));
       return;
@@ -954,7 +947,6 @@ class MyCustomFormState extends State<MyCustomForm> {
                   _formKey.currentState.save(); // Save our form now.
 
                   // Ping server
-                  print(this._url);
                   checkServer();
                 },
                 color: Colors.blue,
@@ -1026,24 +1018,43 @@ class ShareScreen extends StatefulWidget {
 
 String shareLink = '';
 class ShareScreenState extends State<ShareScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   String shareButtonText = "Get Share Link";
 
-  Future _callOnPressed() async {
+  _callOnPressed() async {
     setState(() {  
       shareButtonText = 'Processing...';
     });
 
-    // Server thisServer = mStreamAudio.playlist[0].server;
-    // Uri currentUri = Uri.parse(thisServer.url);
-    // String url = currentUri.resolve('/shared/make-shared').toString();
-    // var response = await http.post(url, body: {'time': 14, 'playlist': []},  headers: { 'x-access-token': thisServer.jwt});
-    // if (response.statusCode > 299) {
-    //   Scaffold.of(context).showSnackBar(SnackBar(content: Text('Server Call Failed')));
-    //   return;   
-    // }
+    Server thisServer = mStreamAudio.playlist[0].server;
+    Uri currentUri = Uri.parse(thisServer.url);
 
-    // var res = jsonDecode(response.body);
-    // shareLink = // TODO: 
+    Map requestBody = {'time': 14, 'playlist': []};
+    for (var i = 0; i < mStreamAudio.playlist.length; i++) {
+      // TODO: This should be fixed on the webapp side
+      if (mStreamAudio.playlist[i].path[0] == '/') {
+        requestBody['playlist'].add(mStreamAudio.playlist[i].path.substring(1));
+      } else {
+        requestBody['playlist'].add(mStreamAudio.playlist[i].path);
+      }
+    }
+    String url = currentUri.resolve('/shared/make-shared').toString();
+    var response = await http.post(url, body: json.encode(requestBody),  headers: {'Content-Type':'application/json' ,'x-access-token': thisServer.jwt});
+    shareButtonText = 'Get Share Link';
+    setState(() {
+      shareButtonText = 'Get Share Link';
+    });
+    if (response.statusCode > 299) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Server Call Failed')));
+      return;   
+    }
+
+    var res = jsonDecode(response.body);
+    String printUrl = currentUri.resolve('/shared/playlist/${res['playlist_id']}').toString();
+    print(printUrl);
+    setState(() {
+      shareLink = printUrl;
+    });
   }
 
   Widget _thisScreen() {
@@ -1075,6 +1086,7 @@ class ShareScreenState extends State<ShareScreen> {
             },
             child: new Text(shareButtonText),
           ),
+          new Container(height: 28),
           new Text(shareLink)
         ]
       );
@@ -1088,6 +1100,7 @@ class ShareScreenState extends State<ShareScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text("Share Playlist"),
       ),
@@ -1095,11 +1108,6 @@ class ShareScreenState extends State<ShareScreen> {
         padding: new EdgeInsets.all(40.0),
 
         child: _thisScreen()
-        // child: new ListView(
-        //   children: [
-        //     new Text('Share Playlist Goes Here',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-        //   ]
-        // )
       )
     );
   }
