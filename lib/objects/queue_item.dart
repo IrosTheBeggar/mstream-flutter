@@ -1,4 +1,6 @@
 import 'package:uuid/uuid.dart';
+import 'server.dart';
+
 var uuid = new Uuid();
 
 class QueueItem {
@@ -15,12 +17,14 @@ class QueueItem {
   String albumArt;
   bool error;
   final String uuidString = uuid.v4();
+  final Server server;
 
-  QueueItem(this.filename, this.url, this.artist, this.album, this.title, this. track, this.disc, this.year, this.hash, this.rating, this.albumArt );
+  QueueItem(this.server, this.filename, this.url, this.artist, this.album, this.title, this. track, this.disc, this.year, this.hash, this.rating, this.albumArt );
 
   QueueItem.fromJson(Map<String, dynamic> json)
     : filename = json['filename'],
       url = json['url'],
+      server = json['server'],
       artist = json['artist'],
       album = json['album'],
       title = json['title'],
@@ -35,6 +39,7 @@ class QueueItem {
     {
       'filename': filename,
       'url': url,
+      'server': server,      
       'artist': artist,
       'album': album,
       'title': title,

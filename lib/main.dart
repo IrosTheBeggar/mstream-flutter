@@ -63,15 +63,15 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   _goToNavScreen() {
     _tabController.animateTo(0);
     tabText = 'Go To';
+    print(currentServer);
     
     displayCache.clear();
     displayList.clear();
     List<DisplayItem> newList = new List();
-    DisplayItem newItem1 = new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null);
-    DisplayItem newItem2 = new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
-    DisplayItem newItem3 = new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
-    DisplayItem newItem4 = new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
-
+    DisplayItem newItem1 = new DisplayItem(serverList[currentServer], 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null);
+    DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
+    DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
+    DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
     displayList.add(newItem1);
     newList.add(newItem1);
     displayList.add(newItem2);
@@ -161,7 +161,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           displayList.forEach((element) {
             if (element.type == 'file') {
               Uri url = Uri.parse(serverList[currentServer].url + '/media' + element.data + '?token=' + serverList[currentServer].jwt );
-              QueueItem newItem = new QueueItem(element.name, url.toString(), null, null, null, null, null, null, null, null, null);
+              QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), null, null, null, null, null, null, null, null, null);
               setState(() {
                 mStreamAudio.addSong(newItem);
               });
@@ -186,23 +186,23 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 subtitle: displayList[index].subtext == null ? null : Text(displayList[index].subtext),
                 onTap: () {
                   if(displayList[index].type == 'file') {
-                    Uri url = Uri.parse(serverList[currentServer].url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
-                    QueueItem newItem = new QueueItem(displayList[index].name, url.toString(), null, null, null, null, null, null, null, null, null);
+                    Uri url = Uri.parse(displayList[index].server.url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
+                    QueueItem newItem = new QueueItem(displayList[index].server, displayList[index].name, url.toString(), null, null, null, null, null, null, null, null, null);
                     setState(() {
                       mStreamAudio.addSong(newItem);
                     });
                   }
 
                   if(displayList[index].type == 'album') {
-                    getAlbumSongs(displayList[index].data);
+                    getAlbumSongs(displayList[index].data, useThisServer: displayList[index].server);
                   }
 
                   if(displayList[index].type == 'artist') {
-                    getArtistAlbums(displayList[index].data);
+                    getArtistAlbums(displayList[index].data, useThisServer: displayList[index].server);
                   }
 
                   if(displayList[index].type == 'directory') {
-                    getFileList(displayList[index].data);
+                    getFileList(displayList[index].data, useThisServer: displayList[index].server);
                   }
 
                   if(displayList[index].type == 'addServer') {
@@ -210,20 +210,20 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   }
 
                   if(displayList[index].type == 'playlist') {
-                    getPlaylist(displayList[index].data);
+                    getPlaylist(displayList[index].data, useThisServer: displayList[index].server);
                   }
 
                   if(displayList[index].type == 'execAction' && displayList[index].data =='fileExplorer') {
-                    getFileList("", wipeBackCache: false);                  
+                    getFileList("", wipeBackCache: false, useThisServer: displayList[index].server);                  
                   }
                   if(displayList[index].type == 'execAction' && displayList[index].data =='playlists') {
-                    getPlaylists(wipeBackCache: false);
+                    getPlaylists(wipeBackCache: false, useThisServer: displayList[index].server);
                   }
                   if(displayList[index].type == 'execAction' && displayList[index].data =='artists') {
-                    getArtists(wipeBackCache: false);
+                    getArtists(wipeBackCache: false, useThisServer: displayList[index].server);
                   }
                   if(displayList[index].type == 'execAction' && displayList[index].data =='albums') {
-                    getAllAlbums(wipeBackCache: false);
+                    getAllAlbums(wipeBackCache: false, useThisServer: displayList[index].server);
                   }
                 },
               );
@@ -234,12 +234,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     ]);
   }
 
-  Future<void> getFileList(String directory, {bool wipeBackCache = false}) async {
-    setState(() {
-      tabText = 'File Explorer';
-    });
-
-    if (currentServer < 0) {
+  Future _makeServerCall(Server useThisServer, String location, Map payload, String getOrPost, bool wipeBackCache) async {
+    if (useThisServer == null && currentServer < 0) {
       Fluttertoast.showToast(
         msg: "No Server Selected",
         toastLength: Toast.LENGTH_SHORT,
@@ -248,12 +244,17 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         backgroundColor: Colors.orange,
         textColor: Colors.white
       );
-      return;      
+      return null;      
     }
 
-    Uri currentUri = Uri.parse(serverList[currentServer].url);
-    String url = currentUri.resolve('/dirparser').toString();
-    var response = await http.post(url, body: {"dir": directory},  headers: { 'x-access-token': serverList[currentServer].jwt});
+    Uri currentUri = Uri.parse(useThisServer.url);
+    String url = currentUri.resolve(location).toString();
+    var response;
+    if(getOrPost == 'GET') {
+      response = await http.get(url, headers: { 'x-access-token': useThisServer.jwt});
+    }else {
+      response = await http.post(url, body: payload,  headers: { 'x-access-token': useThisServer.jwt});
+    }
 
     if (response.statusCode > 299) {
       Fluttertoast.showToast(
@@ -264,25 +265,38 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         backgroundColor: Colors.orange,
         textColor: Colors.white
       );
-      return;   
+      return null;   
     }
 
     var res = jsonDecode(response.body);
     if(wipeBackCache) {
       displayCache.clear();
       List<DisplayItem> newList = new List();
-      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
-      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
-      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
-      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
+      newList.add(new DisplayItem(useThisServer, 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
+      newList.add(new DisplayItem(useThisServer, 'Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
+      newList.add(new DisplayItem(useThisServer, 'Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
+      newList.add(new DisplayItem(useThisServer, 'Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
       displayCache.add(newList);
     }
+
+    return res;
+  }
+
+  Future<void> getFileList(String directory, {bool wipeBackCache = false, Server useThisServer}) async {
+    setState(() => tabText = 'File Explorer');
+
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
+    }
+
+    var res = await _makeServerCall(useThisServer, '/dirparser', {"dir": directory}, 'POST', wipeBackCache);
+
     displayList.clear();
     List<DisplayItem> newList = new List();
     res['contents'].forEach((e) {
       Icon thisIcon = e['type'] == 'directory' ? Icon(Icons.folder) : Icon(Icons.music_note);
       var thisType = (e['type'] == 'directory') ? 'directory' : 'file';
-      DisplayItem newItem = new DisplayItem(e['name'], thisType, path.join(res['path'], e['name']), thisIcon, null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], thisType, path.join(res['path'], e['name']), thisIcon, null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -290,53 +304,20 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     setState(() {});
   }
 
-  Future<void> getArtists( {bool wipeBackCache = false}) async {
-    setState(() {
-      tabText = 'Artists';
-    });
+  Future<void> getArtists( {bool wipeBackCache = false, Server useThisServer}) async {
+    setState(() => tabText = 'Artists');
 
-    if (currentServer < 0) {
-      Fluttertoast.showToast(
-        msg: "No Server Selected",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 1,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;      
+
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
     }
 
-    Uri currentUri = Uri.parse(serverList[currentServer].url);
-    String url = currentUri.resolve('/db/artists').toString();
-    var response = await http.get(url, headers: { 'x-access-token': serverList[currentServer].jwt});
-    
-    if (response.statusCode > 299) {
-      Fluttertoast.showToast(
-        msg: "Call Failed",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 2,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;   
-    }
+    var res = await _makeServerCall(useThisServer, '/db/artists', null, 'GET', wipeBackCache);
 
-    var res = jsonDecode(response.body);
-    if(wipeBackCache) {
-      displayCache.clear();
-      List<DisplayItem> newList = new List();
-      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
-      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
-      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
-      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
-      displayCache.add(newList);
-    }
     displayList.clear();
     List<DisplayItem> newList = new List();
     res['artists'].forEach((e) {
-      DisplayItem newItem = new DisplayItem(e, 'artist', e, Icon(Icons.library_music), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e, 'artist', e, Icon(Icons.library_music), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -345,40 +326,16 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     setState(() {});
   }
 
-  Future<void> getArtistAlbums(String artist, {bool wipeBackCache = false}) async {
-    if (currentServer < 0) {
-      Fluttertoast.showToast(
-        msg: "No Server Selected",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 1,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;      
+  Future<void> getArtistAlbums(String artist, {bool wipeBackCache = false, Server useThisServer}) async {
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
     }
+    var res = await _makeServerCall(useThisServer, '/db/artists-albums', {"artist": artist}, 'POST', wipeBackCache);
 
-    Uri currentUri = Uri.parse(serverList[currentServer].url);
-    String url = currentUri.resolve('/db/artists-albums').toString();
-    var response = await http.post(url, body: {"artist": artist}, headers: { 'x-access-token': serverList[currentServer].jwt});
-    
-    if (response.statusCode > 299) {
-      Fluttertoast.showToast(
-        msg: "Call Failed",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 2,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;   
-    }
-
-    var res = jsonDecode(response.body);
     displayList.clear();
     List<DisplayItem> newList = new List();
     res['albums'].forEach((e) {
-      DisplayItem newItem = new DisplayItem(e['name'], 'album', e['name'], Icon(Icons.album), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'album', e['name'], Icon(Icons.album), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -387,53 +344,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     setState(() {});
   }
 
-  Future<void> getAlbumSongs(String album, {bool wipeBackCache = false}) async {
-    setState(() {
-      tabText = 'Albums';
-    });
-
-    if (currentServer < 0) {
-      Fluttertoast.showToast(
-        msg: "No Server Selected",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 1,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;      
+  Future<void> getAlbumSongs(String album, {bool wipeBackCache = false, Server useThisServer}) async {
+    setState(() => tabText = 'Albums');
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
     }
 
-    Uri currentUri = Uri.parse(serverList[currentServer].url);
-    String url = currentUri.resolve('/db/album-songs').toString();
-    var response = await http.post(url, body: {"album": album}, headers: { 'x-access-token': serverList[currentServer].jwt});
-    
-    if (response.statusCode > 299) {
-      Fluttertoast.showToast(
-        msg: "Call Failed",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 2,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;   
-    }
+    var res = await _makeServerCall(useThisServer, '/db/album-songs', {"album": album}, 'POST', wipeBackCache);
 
-    var res = jsonDecode(response.body);
     displayList.clear();
-    if(wipeBackCache) {
-      displayCache.clear();
-      List<DisplayItem> newList = new List();
-      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
-      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
-      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
-      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
-      displayCache.add(newList);
-    }
     List<DisplayItem> newList = new List();
     res.forEach((e) {
-      DisplayItem newItem = new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -442,53 +364,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     setState(() {});
   }
 
-  Future<void> getAllAlbums({bool wipeBackCache = false}) async {
-    setState(() {
-      tabText = 'Albums';
-    });
-
-    if (currentServer < 0) {
-      Fluttertoast.showToast(
-        msg: "No Server Selected",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 1,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;      
+  Future<void> getAllAlbums({bool wipeBackCache = false, Server useThisServer}) async {
+    setState(() => tabText = 'Albums');
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
     }
 
-    Uri currentUri = Uri.parse(serverList[currentServer].url);
-    String url = currentUri.resolve('/db/albums').toString();
-    var response = await http.get(url, headers: { 'x-access-token': serverList[currentServer].jwt});
-    
-    if (response.statusCode > 299) {
-      Fluttertoast.showToast(
-        msg: "Call Failed",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 2,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;   
-    }
+    var res = await _makeServerCall(useThisServer, '/db/albums', null, 'GET', wipeBackCache);
 
-    var res = jsonDecode(response.body);
     displayList.clear();
-    if(wipeBackCache) {
-      displayCache.clear();
-      List<DisplayItem> newList = new List();
-      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
-      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
-      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
-      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
-      displayCache.add(newList);
-    }
     List<DisplayItem> newList = new List();
     res['albums'].forEach((e) {
-      DisplayItem newItem = new DisplayItem(e['name'], 'album', e['name'], Icon(Icons.album), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'album', e['name'], Icon(Icons.album), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -497,57 +384,23 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     setState(() {});
   }
 
+  // TODO: 
   Future<void> getAllPlaylistsForAllServers() async {
 
   }
 
-  Future<void> getPlaylists({bool wipeBackCache = false}) async {
-    setState(() {
-      tabText = 'Playlists';
-    });
-
-    if (currentServer < 0) {
-      Fluttertoast.showToast(
-        msg: "No Server Selected",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 1,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;      
+  Future<void> getPlaylists({bool wipeBackCache = false, Server useThisServer}) async {
+    setState(() => tabText = 'Playlists');
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
     }
 
-    Uri currentUri = Uri.parse(serverList[currentServer].url);
-    String url = currentUri.resolve('/playlist/getall').toString();
-    var response = await http.get(url, headers: { 'x-access-token': serverList[currentServer].jwt});
+    var res = await _makeServerCall(useThisServer, '/playlist/getall', null, 'GET', wipeBackCache);
 
-    if (response.statusCode > 299) {
-      Fluttertoast.showToast(
-        msg: "Call Failed",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 2,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;   
-    }
-
-    var res = jsonDecode(response.body);
     displayList.clear();
-    if(wipeBackCache) {
-      displayCache.clear();
-      List<DisplayItem> newList = new List();
-      newList.add(new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
-      newList.add(new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
-      newList.add(new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
-      newList.add(new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
-      displayCache.add(newList);
-    }
     List<DisplayItem> newList = new List();
     res.forEach((e) {
-      DisplayItem newItem = new DisplayItem(e['name'], 'playlist', e['name'], Icon(Icons.queue_music), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'playlist', e['name'], Icon(Icons.queue_music), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -556,41 +409,16 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     setState(() {});
   }
 
-  Future<void> getPlaylist(String playlist) async {
-    print(playlist);
-    if (currentServer < 0) {
-      Fluttertoast.showToast(
-        msg: "No Server Selected",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 1,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;      
+  Future<void> getPlaylist(String playlist, {Server useThisServer, bool wipeBackCache = false}) async {
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
     }
+    var res = await _makeServerCall(useThisServer, '/playlist/load', {"playlistname": playlist}, 'POST', wipeBackCache);
 
-    Uri currentUri = Uri.parse(serverList[currentServer].url);
-    String url = currentUri.resolve('/playlist/load').toString();
-    var response = await http.post(url, body: {"playlistname": playlist},  headers: { 'x-access-token': serverList[currentServer].jwt});
-
-    if (response.statusCode > 299) {
-      Fluttertoast.showToast(
-        msg: "Call Failed",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIos: 1,
-        backgroundColor: Colors.orange,
-        textColor: Colors.white
-      );
-      return;   
-    }
-
-    var res = jsonDecode(response.body);
     displayList.clear();
     List<DisplayItem> newList = new List();
     res.forEach((e) {
-      DisplayItem newItem = new DisplayItem(e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -640,7 +468,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         setState(() {
           tabText = 'Welcome';
           displayList.add(
-            new DisplayItem('Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server')
+            new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server')
           );
         });
       }
@@ -744,17 +572,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           actions: <Widget> [
             new PopupMenuButton(
               onSelected: (Server selectedServer) {
-                if(currentServer != serverList.indexOf(selectedServer)) {
+                // if(currentServer != serverList.indexOf(selectedServer)) {
                   _tabController.animateTo(0);
                   tabText = 'Go To';
+                  currentServer = serverList.indexOf(selectedServer);             
                   
                   displayCache.clear();
                   displayList.clear();
                   List<DisplayItem> newList = new List();
-                  DisplayItem newItem1 = new DisplayItem('File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null);
-                  DisplayItem newItem2 = new DisplayItem('Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
-                  DisplayItem newItem3 = new DisplayItem('Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
-                  DisplayItem newItem4 = new DisplayItem('Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
+                  DisplayItem newItem1 = new DisplayItem(serverList[currentServer], 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null);
+                  DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
+                  DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
+                  DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
 
                   displayList.add(newItem1);
                   newList.add(newItem1);
@@ -766,10 +595,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   newList.add(newItem4);
                   displayCache.add(newList);
 
-                  setState(() {
-                    currentServer = serverList.indexOf(selectedServer);             
-                  });
-                }
+                  setState(() {});
+                // }
               },
               icon: new Icon(Icons.cloud),
               itemBuilder: (BuildContext context) { 
@@ -1190,7 +1017,74 @@ class AboutScreen extends StatelessWidget {
   }
 }
 
-class ShareScreen extends StatelessWidget {
+class ShareScreen extends StatefulWidget {
+  @override
+  ShareScreenState createState() {
+    return ShareScreenState();
+  }
+}
+
+String shareLink = '';
+class ShareScreenState extends State<ShareScreen> {
+  String shareButtonText = "Get Share Link";
+
+  Future _callOnPressed() async {
+    setState(() {  
+      shareButtonText = 'Processing...';
+    });
+
+    // Server thisServer = mStreamAudio.playlist[0].server;
+    // Uri currentUri = Uri.parse(thisServer.url);
+    // String url = currentUri.resolve('/shared/make-shared').toString();
+    // var response = await http.post(url, body: {'time': 14, 'playlist': []},  headers: { 'x-access-token': thisServer.jwt});
+    // if (response.statusCode > 299) {
+    //   Scaffold.of(context).showSnackBar(SnackBar(content: Text('Server Call Failed')));
+    //   return;   
+    // }
+
+    // var res = jsonDecode(response.body);
+    // shareLink = // TODO: 
+  }
+
+  Widget _thisScreen() {
+    if(mStreamAudio.playlist.length == 0) {
+      return new Text('You don\'t have a plylist to share!',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17));
+    }
+
+    Widget showThis;
+    bool allTheSame = true;
+    Server compareTo = mStreamAudio.playlist[0].server;
+
+    for (var i = 0; i < mStreamAudio.playlist.length; i++) {
+      if(i == 0) {
+        continue;
+      }
+      if(compareTo != mStreamAudio.playlist[i].server) {
+        allTheSame = false;
+      }
+    }
+
+    if(allTheSame == true) {
+      showThis = ListView(
+        children: [
+          new Text('Shared playlsits expire automaticaly after 14 days',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+          new RaisedButton(
+            padding: const EdgeInsets.all(8.0),
+            onPressed: () {
+              _callOnPressed();
+            },
+            child: new Text(shareButtonText),
+          ),
+          new Text(shareLink)
+        ]
+      );
+    }else {
+      showThis = Text('Your playlist contains mixed server content.\n\nYou cannot share a mixed content playlist for security reasons',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17));
+    }
+
+    return showThis;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1199,11 +1093,13 @@ class ShareScreen extends StatelessWidget {
       ),
       body: new Container(
         padding: new EdgeInsets.all(40.0),
-        child: new ListView(
-          children: [
-            new Text('Share Playlist Goes Here',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-          ]
-        )
+
+        child: _thisScreen()
+        // child: new ListView(
+        //   children: [
+        //     new Text('Share Playlist Goes Here',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+        //   ]
+        // )
       )
     );
   }
@@ -1249,13 +1145,13 @@ class SavePlaylistScreen extends StatelessWidget {
 
 class ManageServersScreen extends StatefulWidget {
   @override
-  ManageServersScreenSatate createState() {
-    return ManageServersScreenSatate();
+  ManageServersScreenState createState() {
+    return ManageServersScreenState();
   }
 }
 
 // TODO: Delete files on delete server
-class ManageServersScreenSatate extends State<ManageServersScreen> {
+class ManageServersScreenState extends State<ManageServersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1317,7 +1213,7 @@ class ManageServersScreenSatate extends State<ManageServersScreen> {
                                           tabText = 'Welcome';
                                           displayList.clear();
                                           displayCache.clear();
-                                          displayList.add(new DisplayItem('Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server'));
+                                          displayList.add(new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server'));
                                           setState(() {
                                             currentServer = -1;
                                           });
