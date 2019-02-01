@@ -1,42 +1,50 @@
 import 'package:uuid/uuid.dart';
 import 'server.dart';
+import 'metadata.dart';
+import 'package:flutter/material.dart';
 
 var uuid = new Uuid();
 
 class QueueItem {
+  final Server server;
   String filename;
   String url;
   String path;
-
-  String artist;
-  String album;
-  String title;
-  int track;
-  int disc;
-  int year;
-  String hash;
-  int rating;
-  String albumArt;
-  bool error;
+  MusicMetadata metadata;
+  bool error = false;
   final String uuidString = uuid.v4();
-  final Server server;
 
-  QueueItem(this.server, this.filename, this.url, this.path, this.artist, this.album, this.title, this. track, this.disc, this.year, this.hash, this.rating, this.albumArt );
+  Widget getImage() {
+    if(metadata != null && metadata.albumArt != null) {
+      // return Image.network('https://picsum.photos/250?image=9');
+      // TODO: Image re-sizing sucks right now
+    }
+    return new Icon(Icons.music_note);
+  }
+
+  Widget getText() {
+    if(metadata != null && metadata.title != null) {
+      return Text(metadata.title);
+    }
+
+    return new Text(this.filename);
+  }
+
+  Widget getSubText() {
+    if(metadata != null && metadata.artist != null) {
+      return Text(metadata.artist);
+    }
+    return null;
+  }
+
+  QueueItem(this.server, this.filename, this.url, this.path, this.metadata);
 
   QueueItem.fromJson(Map<String, dynamic> json)
     : filename = json['filename'],
       url = json['url'],
       path = json['path'],
       server = json['server'],
-      artist = json['artist'],
-      album = json['album'],
-      title = json['title'],
-      track = json['track'],
-      disc = json['disc'],
-      year = json['year'],
-      hash = json['hash'],
-      rating = json['rating'],
-      albumArt = json['albumArt'];
+      metadata = json['metadata'];
 
   Map<String, dynamic> toJson() =>
     {
@@ -44,14 +52,6 @@ class QueueItem {
       'url': url,
       'path': path,
       'server': server,      
-      'artist': artist,
-      'album': album,
-      'title': title,
-      'track': track,
-      'disc': disc,
-      'year': year,
-      'hash': hash,
-      'rating': rating,
-      'albumArt': albumArt,
+      'metadata': metadata
     };
 }

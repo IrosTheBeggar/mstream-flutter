@@ -13,6 +13,7 @@ import 'package:path/path.dart' as path;
 
 import 'mstream_player.dart';
 import 'objects/queue_item.dart';
+import 'objects/metadata.dart';
 
 typedef void OnError(Exception exception);
 
@@ -55,6 +56,28 @@ class ExampleApp extends StatefulWidget {
 class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateMixin {
   TabController _tabController;
   String localFilePath;
+
+  _getSongMetadata(QueueItem song) async {
+    Uri currentUri = Uri.parse(song.server.url);
+    String url = currentUri.resolve('/db/metadata').toString();
+    var response = await http.post(url ,body: {'filepath':song.path},  headers: { 'x-access-token': song.server.jwt});
+    try {
+      var e = jsonDecode(response.body);
+      MusicMetadata newMeta = new MusicMetadata(e['metadata']['artist'], e['metadata']['album'], e['metadata']['title'], e['metadata']['track'], null, e['metadata']['year'], e['metadata']['hash'], e['metadata']['rating'], e['metadata']['album-art']);
+      setState(() {
+        song.metadata = newMeta;        
+      });
+    }catch (err) {
+
+    }
+  }
+
+  _addSongWizard(QueueItem song) {
+    mStreamAudio.addSong(song);
+    if(song.metadata == null) {
+      _getSongMetadata(song);
+    }
+  }
 
   _setState() {
     setState(() {});
@@ -124,8 +147,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 child:  Container(
                   color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
                   child: new ListTile(
-                    leading: new Icon(Icons.music_note),
-                    title: Text(mStreamAudio.playlist[index].filename),
+                    leading: mStreamAudio.playlist[index].getImage(),
+                    title: mStreamAudio.playlist[index].getText(),
+                    subtitle: mStreamAudio.playlist[index].getSubText(),
                     onTap: () {
                       setState(() {
                         mStreamAudio.goToSongAtPosition(index);
@@ -160,12 +184,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           displayList.forEach((element) {
             if (element.type == 'file') {
               Uri url = Uri.parse(element.server.url + '/media' + element.data + '?token=' + element.server.jwt );
-              QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, null, null, null, null, null, null, null, null, null);
-              setState(() {
-                mStreamAudio.addSong(newItem);
-              });
+              QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, element.metadata);
+              // mStreamAudio.addSong(newItem);
+              _addSongWizard(newItem);
             }
           });
+          setState(() {});
         }),
         Expanded(child: TextField(decoration: InputDecoration(
           border: InputBorder.none,
@@ -180,14 +204,17 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             itemBuilder: (BuildContext context, int index) {
               return new ListTile(
                 leading: displayList[index].icon == null ? null : displayList[index].icon,
-                title: Text(displayList[index].name),
-                subtitle: displayList[index].subtext == null ? null : Text(displayList[index].subtext),
+                title: displayList[index].getText(),
+                subtitle: displayList[index].getSubText(),
                 onTap: () {
                   if(displayList[index].type == 'file') {
                     Uri url = Uri.parse(displayList[index].server.url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
-                    QueueItem newItem = new QueueItem(displayList[index].server, displayList[index].name, url.toString(), displayList[index].data, null, null, null, null, null, null, null, null, null);
+                    MusicMetadata met = displayList[index].metadata;
+                    QueueItem newItem = new QueueItem(displayList[index].server, displayList[index].name, url.toString(), displayList[index].data, displayList[index].metadata);
+                    
                     setState(() {
-                      mStreamAudio.addSong(newItem);
+                      _addSongWizard(newItem);
+                      // mStreamAudio.addSong(newItem);
                     });
                   }
 
@@ -354,6 +381,15 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     List<DisplayItem> newList = new List();
     res.forEach((e) {
       DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
+      
+      try {
+        e['metadata'];
+        MusicMetadata newMeta = new MusicMetadata(e['metadata']['artist'], e['metadata']['album'], e['metadata']['title'], e['metadata']['track'], null, e['metadata']['year'], e['metadata']['hash'], e['metadata']['rating'], e['metadata']['album-art']);
+        newItem.metadata = newMeta;
+      }catch (err) {
+
+      }
+      
       displayList.add(newItem);
       newList.add(newItem);
     });
