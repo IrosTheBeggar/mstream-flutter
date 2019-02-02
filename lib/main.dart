@@ -14,6 +14,8 @@ import 'package:path/path.dart' as path;
 import 'mstream_player.dart';
 import 'objects/queue_item.dart';
 import 'objects/metadata.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:smooth_star_rating/smooth_star_rating.dart'; 
 
 typedef void OnError(Exception exception);
 
@@ -137,14 +139,72 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             physics: const AlwaysScrollableScrollPhysics (),
             itemCount: mStreamAudio.playlist.length,
             itemBuilder: (BuildContext context, int index) {
-              return  Dismissible(
+              return Slidable(
                 key: Key(mStreamAudio.playlist[index].uuidString),
-                onDismissed: (direction) {
+                slideToDismissDelegate: new SlideToDismissDrawerDelegate(
+                  onDismissed: (actionType) {
                   setState(() {
                     mStreamAudio.removeSongAtPosition(index);
                   });
-                },
-                child:  Container(
+                  }
+                ),
+                delegate: SlidableStrechDelegate(),
+                actionExtentRatio: 0.18,
+                actions: <Widget>[
+                  SlideAction(
+                    child: new Container(),
+                    color: Colors.grey,
+                    closeOnTap: false,
+                    //onTap: () => removeLocation(location),
+                  ),
+                ],
+                secondaryActions: <Widget>[
+                  IconSlideAction(
+                    caption: (mStreamAudio.playlist[index].metadata != null && mStreamAudio.playlist[index].metadata.rating != null) ? (mStreamAudio.playlist[index].metadata.rating/2).toStringAsFixed(1): null,
+                    color: Colors.blueGrey,
+                    icon: Icons.star,
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: new Text("Rate Song"),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                mStreamAudio.playlist[index].getText(),
+                                new RateDialogContent(queueItem: mStreamAudio.playlist[index]),
+                              ]
+                            ),
+                            actions: [
+                              new FlatButton(
+                                child: new Text("Go Back"),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              new FlatButton(
+                                child: new Text("Rate Song"),
+                                onPressed: () {
+                                  // TODO: Save
+                                  this._rateSong(mStreamAudio.playlist[index]).then((onValue) {
+                                  });
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ]
+                          );
+                      });
+                    },
+                  ),
+                  SlideAction(
+                    child: new Text('data'),
+                    color: Colors.blueGrey,
+                    closeOnTap: false,
+                    //onTap: () => removeLocation(location),
+                  ),
+                ],
+                child: Container(
                   color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
                   child: new ListTile(
                     leading: mStreamAudio.playlist[index].getImage(),
@@ -259,6 +319,38 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     ]);
   }
 
+  Future _rateSong(QueueItem thisItem) async {
+    // Make http call
+    Uri currentUri = Uri.parse(thisItem.server.url);
+    String url = currentUri.resolve('/db/rate-song').toString();
+    // Update actual rating on success
+
+    var response;
+    try {
+      Map requestBody = {'filepath':thisItem.path, 'rating':thisItem.tempRating};
+      response = await http.post(url , body: json.encode(requestBody),  headers: {'Content-Type':'application/json' ,'x-access-token': thisItem.server.jwt});
+
+      if (response.statusCode > 299) {
+        throw new Error();
+      }
+      jsonDecode(response.body);
+      thisItem.metadata.rating = thisItem.tempRating;
+      // TODO: All metadata instances need to be checked and updated if the paths + servers are the same
+      setState(() {});
+    } catch(err) {
+      Fluttertoast.showToast(
+        msg: "Rating Call Failed",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIos: 1,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white
+      );
+    }
+
+    thisItem.tempRating = null;
+  }
+
   Future _makeServerCall(Server useThisServer, String location, Map payload, String getOrPost, bool wipeBackCache) async {
     if (useThisServer == null && currentServer < 0) {
       Fluttertoast.showToast(
@@ -269,7 +361,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         backgroundColor: Colors.orange,
         textColor: Colors.white
       );
-      return null;      
+      return null;
     }
 
     Uri currentUri = Uri.parse(useThisServer.url);
@@ -290,7 +382,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         backgroundColor: Colors.orange,
         textColor: Colors.white
       );
-      return null;   
+      return null;
     }
 
     var res = jsonDecode(response.body);
@@ -1292,5 +1384,47 @@ class ManageServersScreenState extends State<ManageServersScreen> {
         )]
       )
     );
+  }
+}
+
+class RateDialogContent extends StatefulWidget {
+  RateDialogContent({
+    Key key,
+    this.queueItem,
+  }): super(key: key);
+
+  final QueueItem queueItem;
+
+  @override
+  _RateDialogContentState createState() => new _RateDialogContentState();
+}
+
+class _RateDialogContentState extends State<RateDialogContent> {
+
+  @override
+  void initState(){
+    super.initState();
+    widget.queueItem.tempRating = widget.queueItem.getRating();
+  }
+
+  _getContent(){
+    return new SmoothStarRating(
+      allowHalfRating: true,
+      onRatingChanged: (v) {
+        setState(() {
+          widget.queueItem.tempRating = (v*2).toInt();
+        });
+      },
+      starCount: 5,
+      rating: widget.queueItem.getDisplayRating(),
+      size: 40.0,
+      color: Colors.green,
+      borderColor: Colors.green,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _getContent();
   }
 }

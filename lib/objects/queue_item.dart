@@ -2,6 +2,8 @@ import 'package:uuid/uuid.dart';
 import 'server.dart';
 import 'metadata.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 var uuid = new Uuid();
 
@@ -11,7 +13,8 @@ class QueueItem {
   String url;
   String path;
   MusicMetadata metadata;
-  bool error = false;
+  int tempRating;  // For handling rating changes
+  bool err = false;
   final String uuidString = uuid.v4();
 
   Widget getImage() {
@@ -31,10 +34,26 @@ class QueueItem {
   }
 
   Widget getSubText() {
+    if(err == true) {
+      return Text('Error: Could not play song', style: TextStyle(color: Colors.red));
+    }
+
     if(metadata != null && metadata.artist != null) {
       return Text(metadata.artist);
     }
     return null;
+  }
+
+  int getRating() {
+    return (metadata != null && metadata.rating != null) ? metadata.rating : 0;
+  }
+
+  double getDisplayRating() {
+    if(tempRating != null) {
+      return tempRating/2;
+    }else {
+      return (metadata != null && metadata.rating != null) ? metadata.rating/2 : 0;
+    }
   }
 
   QueueItem(this.server, this.filename, this.url, this.path, this.metadata);

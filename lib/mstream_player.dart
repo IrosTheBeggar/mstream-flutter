@@ -282,6 +282,8 @@ class MstreamPlayer {
 
   PlayerObjectX playerA = new PlayerObjectX('default', new AudioPlayer(), null);
   PlayerObjectX playerB = new PlayerObjectX('default', new AudioPlayer(), null);
+
+
   String curP = 'A';
 
   PlayerObjectX getCurrentPlayer() {
@@ -304,7 +306,7 @@ class MstreamPlayer {
     return null;
   }
 
-  flipFlop() {
+  String flipFlop() {
     if (curP == 'A') {
       curP = 'B';
     } else if (curP == 'B') {
@@ -315,7 +317,6 @@ class MstreamPlayer {
   }
 
   var playbackRate = 1;
-  // Duration duration;
   Duration currentTime;
   bool playing = false;
   // var volume = 100;
@@ -474,12 +475,15 @@ class MstreamPlayer {
   _setMedia(QueueItem song, PlayerObjectX player, bool shouldPlay) {
     player.playerType = 'default';
     player.playerObject.setUrl(song.url);
+    // QueueItem erg = player.songObject;
+    // erg.err = false;
     player.playerObject.completionHandler = () {
       _callMeOnStreamEnd();
     };
 
     player.playerObject.durationHandler = (Duration d) {
-      print('DURATION!!!!');
+      print('DURATION');
+      print(d.inMilliseconds);
       // duration = d;
       player.duration = d;
     };
@@ -491,9 +495,11 @@ class MstreamPlayer {
         // rpf2.value = currentTime;
         rpf.value = !rpf.value; // TODO: This is hacky as fuck
       }
-      // print(currentTime.inMilliseconds);
-      // print(duration.inMilliseconds);
+    };
 
+    player.playerObject.errorHandler = (err) {
+      print('ERROR!');
+      player.songObject.err = true;
     };
 
     player.playerObject.audioPlayerStateChangeHandler = (AudioPlayerState state) {
@@ -501,6 +507,7 @@ class MstreamPlayer {
     };
 
     player.songObject = song;
+    player.songObject.err = false;
     if (shouldPlay == true) {
       _howlPlayerPlay();
     }
@@ -682,8 +689,8 @@ class MstreamPlayer {
   }
 
   _setErrHandle() {
-    playerA.playerObject.completionHandler = () {
-      playerA.songObject.error = true;
+    playerA.playerObject.errorHandler = (err) {
+      playerA.songObject.err = true;
       // TODO: Toast
 
       PlayerObjectX currentPlayer = getCurrentPlayer();
@@ -698,8 +705,8 @@ class MstreamPlayer {
       }
     };
 
-    playerB.playerObject.completionHandler = () {
-      playerB.songObject.error = true;
+    playerB.playerObject.errorHandler = (err) {
+      playerB.songObject.err = true;
       // TODO: Toast
 
       PlayerObjectX currentPlayer = getCurrentPlayer();

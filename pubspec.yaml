@@ -16,6 +16,8 @@ dependencies:
   fluttertoast: ^2.2.11
   uuid: ^1.0.3
   flutter_launcher_icons: "^0.7.0"
+  flutter_slidable: "^0.4.9"
+  smooth_star_rating: "^1.0.1"
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
@@ -28,7 +30,7 @@ flutter_icons:
   android: true
   ios: true
   image_path_android: "graphics/icon/icon.png"
-  image_path_ios: "graphics/icon/icon.png"
+  image_path_ios: "graphics/icon/mstream.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec
