@@ -197,12 +197,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                       });
                     },
                   ),
-                  SlideAction(
-                    child: new Text('data'),
-                    color: Colors.blueGrey,
-                    closeOnTap: false,
-                    //onTap: () => removeLocation(location),
-                  ),
+                  // SlideAction(
+                  //   child: new Text('data'),
+                  //   color: Colors.blueGrey,
+                  //   closeOnTap: false,
+                  //   //onTap: () => removeLocation(location),
+                  // ),
                 ],
                 child: Container(
                   color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
