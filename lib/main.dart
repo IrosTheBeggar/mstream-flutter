@@ -710,7 +710,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   }
 
   Future<bool> _onWillPop() {
-    if (displayCache.length > 1) {
+    if (_tabController.index != 0) {
+      _tabController.animateTo(0);
+    } else if (displayCache.length > 1) {
       displayCache.removeLast();
       displayList.length = 0;
       List<DisplayItem> newList = displayCache[displayCache.length - 1];

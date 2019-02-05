@@ -24,4 +24,3 @@ Currently Flutter does not have a way to handle background audio for iOS.  If yo
 * Add server with QR code (QR code scanners for flutter need some improvement first)
 * Display Album Art for albums (Image resizing for network images currently sucks)
 * Update all metadata instances after a star rating
-* On Android back button, switch tabs before going back through backCache
