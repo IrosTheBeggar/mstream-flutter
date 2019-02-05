@@ -186,7 +186,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                               new FlatButton(
                                 child: new Text("Rate Song"),
                                 onPressed: () {
-                                  // TODO: Save
+                                  // Save
                                   this._rateSong(mStreamAudio.playlist[index]).then((onValue) {
                                   });
                                   Navigator.of(context).pop();
@@ -274,41 +274,56 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     
                     setState(() {
                       _addSongWizard(newItem);
-                      // mStreamAudio.addSong(newItem);
                     });
+                  }
+
+                  // TODO: Replace all this with a switch statment
+
+                  if( displayList[index].type == 'localDirectory') {
+                    getLocalFiles(displayList[index].data);
+                    return;
                   }
 
                   if(displayList[index].type == 'album') {
                     getAlbumSongs(displayList[index].data, useThisServer: displayList[index].server);
+                    return;
                   }
 
                   if(displayList[index].type == 'artist') {
                     getArtistAlbums(displayList[index].data, useThisServer: displayList[index].server);
+                    return;
                   }
 
                   if(displayList[index].type == 'directory') {
                     getFileList(displayList[index].data, useThisServer: displayList[index].server);
+                    return;
                   }
 
                   if(displayList[index].type == 'addServer') {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
+                    return;
                   }
 
                   if(displayList[index].type == 'playlist') {
                     getPlaylist(displayList[index].data, useThisServer: displayList[index].server);
+                    return;
                   }
 
                   if(displayList[index].type == 'execAction' && displayList[index].data =='fileExplorer') {
-                    getFileList("", wipeBackCache: false, useThisServer: displayList[index].server);                  
+                    getFileList("", wipeBackCache: false, useThisServer: displayList[index].server);
+                    return;
                   }
                   if(displayList[index].type == 'execAction' && displayList[index].data =='playlists') {
                     getPlaylists(wipeBackCache: false, useThisServer: displayList[index].server);
+                    return;
                   }
                   if(displayList[index].type == 'execAction' && displayList[index].data =='artists') {
                     getArtists(wipeBackCache: false, useThisServer: displayList[index].server);
+                    return;
                   }
                   if(displayList[index].type == 'execAction' && displayList[index].data =='albums') {
                     getAllAlbums(wipeBackCache: false, useThisServer: displayList[index].server);
+                    return;
                   }
                 },
               );
@@ -349,6 +364,48 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     thisItem.tempRating = null;
+  }
+
+  Future<void> getLocalFiles(String directory, {wipeBackCache: false}) async {
+    setState(() => tabText = 'Local Files');
+
+    if(wipeBackCache) {
+      displayCache.clear();
+    } 
+    displayList.clear();
+    List<DisplayItem> newList = new List();
+
+    Directory file;
+    if(directory == null){
+      Directory woo = await getApplicationDocumentsDirectory();
+      file = new Directory(path.join(woo.path.toString(), 'media'));
+    }else {
+      file = new Directory(directory);
+    }
+
+    int stringLength = file.path.toString().length + 1; // The plug ones covers the extra `/` that will be on the results 
+    file.list(recursive: false, followLinks: false)
+      .listen((FileSystemEntity entity) {
+        print(entity.path);
+        Icon useIcon;
+        String type;
+        if (entity is File) {
+          useIcon = new Icon(Icons.music_note);
+          type = 'localFile';
+        } else {
+          useIcon = new Icon(Icons.folder);
+          type = 'localDirectory';
+        }
+
+        String thisName = entity.path.substring(stringLength, entity.path.length);
+        DisplayItem newItem = new DisplayItem(null, thisName, type, entity.path, useIcon, null);
+        displayList.add(newItem);
+        newList.add(newItem);
+
+      }).onDone(() {
+        displayCache.add(newList);
+        setState(() {});
+      });
   }
 
   Future _makeServerCall(Server useThisServer, String location, Map payload, String getOrPost, bool wipeBackCache) async {
@@ -788,7 +845,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               new ListTile(
                 title: new Text('Local Files', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
                 leading: new Icon(Icons.folder_open),
-                onTap: () {},
+                onTap: () {
+                  getLocalFiles(null, wipeBackCache: true);
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(0);
+                },
               ),
               new ListTile(
                 title: new Text('Manage Servers', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
@@ -899,10 +960,13 @@ class MyCustomFormState extends State<MyCustomForm> {
   // us to validate the form
   // Note: This is a GlobalKey<FormState>, not a GlobalKey<MyCustomFormState>!
   final _formKey = GlobalKey<FormState>();
-  var _url;
-  var _username;
-  var _password;
-  var _serverName;
+  String _url;
+  String _username;
+  String _password;
+  String _serverName;
+  String _localName;
+  bool _isUpdate = false;
+  Directory useThisDir;
 
   checkServer() async {
     Uri lol = Uri.parse(this._url);
@@ -943,7 +1007,7 @@ class MyCustomFormState extends State<MyCustomForm> {
     saveServer(origin, res['token']);
   }
 
-  saveServer(String origin, [String jwt='']) {
+  Future<void> saveServer(String origin, [String jwt='']) async {
     bool shouldUpdate = false;
     try {
       serverList[editThisServer];
@@ -958,9 +1022,13 @@ class MyCustomFormState extends State<MyCustomForm> {
       serverList[editThisServer].password = _password;
       serverList[editThisServer].username = _username;
     }else {
-      Server woo = new Server(origin, this._serverName, this._username, this._password, jwt, this._serverName);
+      Server woo = new Server(origin, this._serverName, this._username, this._password, jwt, this._localName);
       serverList.add(woo);
-      
+
+      // Create server directory
+      var file = await getApplicationDocumentsDirectory();
+      String dir = path.join(file.path, 'media/' + this._localName);
+      await new Directory(dir).create(recursive: true);
       currentServer = serverList.length - 1;
       redrawServerFlag.value = !redrawServerFlag.value;
     }
@@ -968,6 +1036,14 @@ class MyCustomFormState extends State<MyCustomForm> {
     // Save Server List
     writeServerFile();
     Navigator.pop(context);
+  }
+
+    @override
+  void initState() {
+    super.initState();
+    getApplicationDocumentsDirectory().then((filepath) {
+      useThisDir = filepath;
+    });
   }
 
   @override
@@ -979,6 +1055,8 @@ class MyCustomFormState extends State<MyCustomForm> {
       _username = serverList[editThisServer].username;
       _password = serverList[editThisServer].password;
       _serverName = serverList[editThisServer].nickname;
+      _localName = serverList[editThisServer].localname;
+      _isUpdate = true;
     } catch (err) {
       
     }
@@ -990,20 +1068,6 @@ class MyCustomFormState extends State<MyCustomForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            TextFormField(
-              initialValue: _serverName,
-              validator: (value) {
-
-              },
-              keyboardType: TextInputType.emailAddress,
-              decoration: new InputDecoration(
-                hintText: 'Server Name',
-                labelText: 'Server Name'
-              ),
-              onSaved: (String value) {
-                this._serverName = value;
-              }
-            ),
             TextFormField(
               initialValue: _url,
               validator: (value) {
@@ -1026,6 +1090,24 @@ class MyCustomFormState extends State<MyCustomForm> {
               ),
               onSaved: (String value) {
                 this._url = value;
+              }
+            ),
+            TextFormField(
+              initialValue: _serverName,
+              validator: (value) {
+                // TODO: Fill in the local name variable here
+                // final newString = value.replaceAllMapped(new RegExp(r'\b\w+\b'), (match) {
+                //   return '"${match.group(0)}"';
+                // });
+                // print(newString);
+              },
+              keyboardType: TextInputType.emailAddress,
+              decoration: new InputDecoration(
+                hintText: 'Server Name',
+                labelText: 'Server Name'
+              ),
+              onSaved: (String value) {
+                this._serverName = value;
               }
             ),
             TextFormField(
@@ -1054,6 +1136,31 @@ class MyCustomFormState extends State<MyCustomForm> {
               ),
               onSaved: (String value) {
                 this._password = value;
+              }
+            ),
+            TextFormField(
+              enabled: (_localName == null) ? true : false,
+              initialValue: _localName,
+              validator: (value) {
+               if (value.isEmpty) {
+                  return 'Local Name is needed to sync files to phone';
+                }
+
+                if(_isUpdate != true) {
+                  // Check against the directory
+                  String dir = path.join(useThisDir.path, 'media/' + value);
+                  if (new Directory(dir).existsSync() == true) {
+                    return 'Pathname Already Exists';
+                  }
+                  return RegExp(r"^[\w\-. ]+$").hasMatch(value) ? null : 'No Special Characters';
+                }
+              },
+              decoration: new InputDecoration(
+                hintText: 'Local Directory Name',
+                labelText: 'Local Directory Name'
+              ),
+              onSaved: (String value) {
+                this._localName = value;
               }
             ),
             new Container(
@@ -1286,8 +1393,13 @@ class ManageServersScreen extends StatefulWidget {
   }
 }
 
-// TODO: Delete files on delete server
 class ManageServersScreenState extends State<ManageServersScreen> {
+  Future<void> _deleteServeDirectory(Server removedServer) async {
+    final directory = await getApplicationDocumentsDirectory();
+    var dir = new Directory(path.join(directory.path.toString(), 'media/' + removedServer.localname));
+    dir.delete(recursive: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1322,9 +1434,7 @@ class ManageServersScreenState extends State<ManageServersScreen> {
                               return AlertDialog(
                                 title: new Text("Confirm Remove Server"),
                                 content: Row(children: <Widget>[
-                                  new Checkbox(value: false, onChanged: (bool value) {
-                                  
-                                  }),
+                                  new DeleteServerAlertForm(),
                                   new Flexible(child: Text("Remove synced files from device?"))
                                 ]),
                                 actions: <Widget>[
@@ -1339,7 +1449,7 @@ class ManageServersScreenState extends State<ManageServersScreen> {
                                     onPressed: () {
                                       try {
                                         serverList[index];
-                                        serverList.removeAt(index);
+                                        Server removedServer = serverList.removeAt(index);
                                         setState(() {
                                         });
                                         writeServerFile();
@@ -1358,10 +1468,15 @@ class ManageServersScreenState extends State<ManageServersScreen> {
                                           setState(() {
                                             currentServer = 0;
                                           });
-                                        }else if (currentServer > index) { // Handle case where curent server is after remoced index
+                                        }else if (currentServer > index) { // Handle case where curent server is after removed index
                                           setState(() {
                                             currentServer = currentServer -1;
                                           });
+                                        }
+
+                                        // Delete files
+                                        if(isRemoveFilesOnServerDeleteSelected == true) {
+                                          _deleteServeDirectory(removedServer);
                                         }
                                       } catch(err) {
 
@@ -1426,5 +1541,29 @@ class _RateDialogContentState extends State<RateDialogContent> {
   @override
   Widget build(BuildContext context) {
     return _getContent();
+  }
+}
+
+class DeleteServerAlertForm extends StatefulWidget {
+  DeleteServerAlertForm({Key key}): super(key: key);
+
+  @override
+  _DeleteServerAlertFormState createState() => new _DeleteServerAlertFormState();
+}
+
+bool isRemoveFilesOnServerDeleteSelected = false;
+class _DeleteServerAlertFormState extends State<DeleteServerAlertForm> {
+  @override
+  void initState() {
+    isRemoveFilesOnServerDeleteSelected = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Checkbox(value: isRemoveFilesOnServerDeleteSelected, onChanged: (bool value) {
+      setState(() {
+        isRemoveFilesOnServerDeleteSelected = !isRemoveFilesOnServerDeleteSelected;
+      });
+    });
   }
 }
