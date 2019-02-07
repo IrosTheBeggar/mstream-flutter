@@ -8,7 +8,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'objects/server.dart';
 import 'objects/display_item.dart';
 
-import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path/path.dart' as path;
 
 import 'mstream_player.dart';
@@ -16,6 +15,8 @@ import 'objects/queue_item.dart';
 import 'objects/metadata.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:smooth_star_rating/smooth_star_rating.dart'; 
+
+import 'sync_util.dart';
 
 typedef void OnError(Exception exception);
 
@@ -32,6 +33,7 @@ final ValueNotifier redrawPlaylistFlag = ValueNotifier(false);
 // final ValueNotifier positionBar = ValueNotifier();
 
 MstreamPlayer mStreamAudio = new MstreamPlayer();
+SyncUtil syncUtil = new SyncUtil();
 
 Future<File> get _serverFile async {
   final directory = await getApplicationDocumentsDirectory();
@@ -74,7 +76,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
   }
 
-  _addSongWizard(QueueItem song) {
+  // TODO: This really should'nt be asynced
+  _addSongWizard(QueueItem song) async {
+    // Check for song locally
+    String downloadDirectory = song.server.localname + song.path;
+    final dir = await getApplicationDocumentsDirectory();
+    String finalString = '${dir.path}/media/${downloadDirectory}';
+
+    if (new File(finalString).existsSync() == true) {
+      print(finalString);
+      song.localFile = finalString;
+    }
+
     mStreamAudio.addSong(song);
     if(song.metadata == null) {
       _getSongMetadata(song);
@@ -150,7 +163,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 ),
                 delegate: SlidableStrechDelegate(),
                 actionExtentRatio: 0.18,
-                actions: <Widget>[
+                secondaryActions: <Widget>[
                   SlideAction(
                     child: new Container(),
                     color: Colors.grey,
@@ -158,9 +171,23 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     //onTap: () => removeLocation(location),
                   ),
                 ],
-                secondaryActions: <Widget>[
+                actions: <Widget>[
                   IconSlideAction(
-                    caption: (mStreamAudio.playlist[index].metadata != null && mStreamAudio.playlist[index].metadata.rating != null) ? (mStreamAudio.playlist[index].metadata.rating/2).toStringAsFixed(1): null,
+                    color: Colors.grey,
+                    closeOnTap: true,
+                    icon: Icons.sync,
+                    caption: 'SYNC',
+                    onTap: () {
+                      print('SYNC ME');
+                      String serverPath;
+                      serverPath = mStreamAudio.playlist[index].path;
+                      syncUtil.downloadOneFile2(mStreamAudio.playlist[index].server, serverPath).then((woo) {
+                        // Update playlist object
+                      });
+                    },
+                  ),
+                  IconSlideAction(
+                    caption: (mStreamAudio.playlist[index].metadata != null && mStreamAudio.playlist[index].metadata.rating != null) ? (mStreamAudio.playlist[index].metadata.rating/2).toStringAsFixed(1): 'RATE',
                     color: Colors.blueGrey,
                     icon: Icons.star,
                     onTap: () {
@@ -657,10 +684,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       }
     });
 
-    FlutterDownloader.registerCallback((id, status, progress) {
-      // TODO: Handle downlaod state
-      print('Download task ($id) is in status ($status) and process ($progress)');
-    });
+    syncUtil.initBasic();
   }
 
 
@@ -668,45 +692,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   void dispose() {
     _tabController.dispose();
     redrawServerFlag.dispose();
-    FlutterDownloader.registerCallback(null);
+    redrawPlaylistFlag.dispose();
+    syncUtil.disposeBasic();
     super.dispose();
-  }
-
-  // Sync Functions
-  Future downloadOneFile(String serverDir, String downloadUrl) async {
-    serverDir = serverList[currentServer].localname; // TODO: delete this later
-    // download each file relative to its path
-
-    final bytes = await http.readBytes(downloadUrl);
-    final dir = await getApplicationDocumentsDirectory();
-    final file = new File('${dir.path}/${serverDir}/$downloadUrl');
-
-    await file.writeAsBytes(bytes);
-  }
-
-  Future downloadOneFile2(String serverDir, String downloadUrl) async {
-    serverDir = serverList[currentServer].localname; // TODO: delete this later
-    // download each file relative to its path
-
-    final dir = await getApplicationDocumentsDirectory();
-    final taskId = await FlutterDownloader.enqueue(
-      url: downloadUrl,
-      savedDir: '${dir.path}/${serverDir}/$downloadUrl',
-      showNotification: false, // show download progress in status bar (for Android)
-      openFileFromNotification: false, // click on notification to open downloaded file (for Android)
-    );
-
-    FlutterDownloader.registerCallback((id, status, progress) {
-      // code to update your UI
-    });
-  }
-
-  void syncPlaylist() {
-    // TODO: Do this one next
-  }
-
-  void syncDirectory() {
-    // 
   }
 
   Future<bool> _onWillPop() {

@@ -16,6 +16,7 @@ class QueueItem {
   int tempRating;  // For handling rating changes
   bool err = false;
   final String uuidString = uuid.v4();
+  String localFile;
 
   Widget getImage() {
     if(metadata != null && metadata.albumArt != null) {
@@ -26,11 +27,16 @@ class QueueItem {
   }
 
   Widget getText() {
-    if(metadata != null && metadata.title != null) {
-      return Text(metadata.title);
+    String isCachedLocally = '';
+    if(localFile != null) {
+      isCachedLocally = '*';
     }
 
-    return new Text(this.filename);
+    if(metadata != null && metadata.title != null) {
+      return Text(isCachedLocally + metadata.title);
+    }
+
+    return new Text(isCachedLocally + filename);
   }
 
   Widget getSubText() {

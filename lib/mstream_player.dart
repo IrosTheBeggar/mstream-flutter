@@ -28,10 +28,6 @@ class MstreamPlayer {
     // Stage 1
   }
 
-  // Do we need this?  The device usually handles volume jsut fine
-  // changeVolume() {
-  // }
-
   Timer scrobbleTimer;
   scrobble() {
     // Stage 3
@@ -474,7 +470,18 @@ class MstreamPlayer {
   // Done!
   _setMedia(QueueItem song, PlayerObjectX player, bool shouldPlay) {
     player.playerType = 'default';
-    player.playerObject.setUrl(song.url);
+    String playthis = song.url;
+    bool isItLocal = false;
+
+    if(song.localFile != null) {
+      playthis = song.localFile;
+      isItLocal = true;
+    }
+
+    print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
+    print(playthis);
+
+    player.playerObject.setUrl(playthis, isLocal: isItLocal);
     // QueueItem erg = player.songObject;
     // erg.err = false;
     player.playerObject.completionHandler = () {
