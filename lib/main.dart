@@ -133,6 +133,14 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               IconButton(icon: Icon(Icons.share), onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
               }),
+              IconButton(icon: Icon(Icons.sync), onPressed: () {
+                // Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
+                for (var i = 0; i < mStreamAudio.playlist.length; i++) {
+                  if(mStreamAudio.playlist[i].localFile == null) {
+                    syncUtil.downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path);
+                  }
+                }
+              }),
             ]
           ),
           Row(
@@ -178,12 +186,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     icon: Icons.sync,
                     caption: 'SYNC',
                     onTap: () {
-                      print('SYNC ME');
-                      String serverPath;
-                      serverPath = mStreamAudio.playlist[index].path;
-                      syncUtil.downloadOneFile2(mStreamAudio.playlist[index].server, serverPath).then((woo) {
-                        // Update playlist object
-                      });
+                      syncUtil.downloadOneFile(mStreamAudio.playlist[index].server, mStreamAudio.playlist[index].path);
                     },
                   ),
                   IconSlideAction(

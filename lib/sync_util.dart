@@ -16,6 +16,10 @@ class SyncUtil {
       // Update the trackers
 
       // ? Redraw like how we redraw playlists
+      print(status.toString());
+      if(status.toString() == 'DownloadTaskStatus(3)') {
+        // TODO: Update UI
+      }
     });
   }
 
@@ -29,9 +33,15 @@ class SyncUtil {
     String downloadDirectory = serverObj.localname + serverPath;
     final dir = await getApplicationDocumentsDirectory();
 
+    String lol =  path.dirname( '${dir.path}/media/${downloadDirectory}' );
+    String filename = path.basename( '${dir.path}/media/${downloadDirectory}' );
+    new Directory(lol).createSync(recursive: true);
+    Uri url = Uri.parse(downloadUrl);
+
     final taskId = await FlutterDownloader.enqueue(
-      url: downloadUrl.replaceAll(new RegExp(r"\s+\b|\b\s"), ""),
-      savedDir: '${dir.path}/${downloadDirectory}',
+      url: url.toString(),
+      fileName: filename,
+      savedDir: lol,
       showNotification: false, // show download progress in status bar (for Android)
       openFileFromNotification: false, // click on notification to open downloaded file (for Android)
     );
@@ -39,25 +49,9 @@ class SyncUtil {
     idTracker[taskId] = downloadDirectory;
     downloadTracker[downloadDirectory] = {
       'progress': null,
-      'taskId': taskId
+      'taskId': taskId,
+      'serverUrl': serverObj.url
     };
-  }
-
-  Future<void> downloadOneFile2(Server serverObj, String serverPath) async {
-    print(serverPath);
-    // download each file relative to its path
-    String downloadUrl = serverObj.url + '/media' + serverPath + '?token=' + serverObj.jwt;
-    String downloadDirectory = serverObj.localname + serverPath;
-    final dir = await getApplicationDocumentsDirectory();
-
-    final bytes = await http.readBytes(downloadUrl);
-    new File('${dir.path}/media/${downloadDirectory}').createSync(recursive: true);
-    var file = new File('${dir.path}/media/${downloadDirectory}');    
-    return await file.writeAsBytes(bytes);
-  }
-
-  void syncPlaylist() {
-    // 
   }
 
   void syncDirectory() {

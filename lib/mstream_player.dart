@@ -66,7 +66,21 @@ class MstreamPlayer {
       return _goToSong();
     }
 
-    // TODO:  Cache song if appropriate
+    // Cache song if appropriate
+    PlayerObjectX oPlayer = getOtherPlayer();
+    if ((oPlayer.songObject == null && cacheTimer == null)) {
+      try {
+        playlist[positionCache + 1]; // Check if this exists
+        if (cacheTimer != null) {
+          cacheTimer.cancel();
+        }
+        cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () {
+          _setCachedSong(positionCache + 1);
+        });
+      }catch (err) {
+
+      }
+    }
   }
 
   clearAndPlay() {
@@ -373,10 +387,6 @@ class MstreamPlayer {
     if (cacheTimer != null) {
       cacheTimer.cancel();
     }
-
-    if (cacheTimer != null) {
-      cacheTimer.cancel();
-    }
     cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () {
       if(shuffle == true) {
         try {
@@ -478,20 +488,12 @@ class MstreamPlayer {
       isItLocal = true;
     }
 
-    print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
-    print(playthis);
-
     player.playerObject.setUrl(playthis, isLocal: isItLocal);
-    // QueueItem erg = player.songObject;
-    // erg.err = false;
     player.playerObject.completionHandler = () {
       _callMeOnStreamEnd();
     };
 
     player.playerObject.durationHandler = (Duration d) {
-      print('DURATION');
-      print(d.inMilliseconds);
-      // duration = d;
       player.duration = d;
     };
 
@@ -510,7 +512,7 @@ class MstreamPlayer {
     };
 
     player.playerObject.audioPlayerStateChangeHandler = (AudioPlayerState state) {
-      print(state);
+      // print(state);
     };
 
     player.songObject = song;
@@ -625,6 +627,10 @@ class MstreamPlayer {
       _newShuffle();
     } else {
       _turnShuffleOff();
+    }
+
+    if (cacheTimer != null) {
+      cacheTimer.cancel();
     }
 
     cacheTimer = new Timer(new Duration(seconds: cacheTimeout), () {

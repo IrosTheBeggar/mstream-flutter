@@ -22,8 +22,8 @@ Currently Flutter does not have a way to handle background audio for iOS.  If yo
 ## Sync Features
 Basic File syncing is implemented.  There's a lot to do to make it a seamless user experience though
 
-* Move downloads to Flutter Downloaded (waiting on: https://github.com/fluttercommunity/flutter_downloader/issues/41)
 * Play local files from the local file explorer
+* Update all queueItem instances on sync
 * Sync Album
 * Sync Playlist
 * Sync Artists
@@ -31,7 +31,6 @@ Basic File syncing is implemented.  There's a lot to do to make it a seamless us
 * Better UI for letting the user know which songs are synced
 * Compress files for syncing (low priority)
 * Highlight songs in explorer if they are synced (low priority)
-* Update duplicate songs on sync (low priority)
 
 ### Extra Low Priority
 * Clicking on the cloud button before adding a server throws an exception (only happens on emulators)
