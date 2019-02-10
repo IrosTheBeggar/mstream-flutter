@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'objects/server.dart';
+import 'objects/download_thing.dart';
 import 'objects/display_item.dart';
 
 import 'package:path/path.dart' as path;
@@ -16,9 +17,12 @@ import 'objects/metadata.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:smooth_star_rating/smooth_star_rating.dart'; 
 
-import 'sync_util.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 
 typedef void OnError(Exception exception);
+
+// Sync Stuff
+Map downloadTracker = {};
 
 final List<List<DisplayItem>> displayCache = new List();
 final List<DisplayItem> displayList = new List();
@@ -33,7 +37,6 @@ final ValueNotifier redrawPlaylistFlag = ValueNotifier(false);
 // final ValueNotifier positionBar = ValueNotifier();
 
 MstreamPlayer mStreamAudio = new MstreamPlayer();
-SyncUtil syncUtil = new SyncUtil();
 
 Future<File> get _serverFile async {
   final directory = await getApplicationDocumentsDirectory();
@@ -76,7 +79,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
   }
 
-  // TODO: This really should'nt be asynced
+  // TODO: This really shouldn't be asynced
   _addSongWizard(QueueItem song) async {
     // Check for song locally
     String downloadDirectory = song.server.localname + song.path;
@@ -137,7 +140,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 // Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
                 for (var i = 0; i < mStreamAudio.playlist.length; i++) {
                   if(mStreamAudio.playlist[i].localFile == null) {
-                    syncUtil.downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path);
+                    downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path);
                   }
                 }
               }),
@@ -186,7 +189,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     icon: Icons.sync,
                     caption: 'SYNC',
                     onTap: () {
-                      syncUtil.downloadOneFile(mStreamAudio.playlist[index].server, mStreamAudio.playlist[index].path);
+                      downloadOneFile(mStreamAudio.playlist[index].server, mStreamAudio.playlist[index].path);
                     },
                   ),
                   IconSlideAction(
@@ -270,21 +273,31 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             setState(() {});
           }
         }),
-        new IconButton(icon: Icon(Icons.library_add), tooltip: 'Go Back', onPressed: () {
+        new IconButton(icon: Icon(Icons.library_add), tooltip: 'Add All', onPressed: () {
           displayList.forEach((element) {
             if (element.type == 'file') {
               Uri url = Uri.parse(element.server.url + '/media' + element.data + '?token=' + element.server.jwt );
               QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, element.metadata);
-              // mStreamAudio.addSong(newItem);
               _addSongWizard(newItem);
             }
           });
           setState(() {});
         }),
-        Expanded(child: TextField(decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: 'Search'
-        )))
+        new IconButton(icon: Icon(Icons.sync), tooltip: 'Sync All', onPressed: () {
+          displayList.forEach((element) {
+            if (element.type == 'file') {
+              // Uri url = Uri.parse(element.server.url + '/media' + element.data + '?token=' + element.server.jwt );
+              // QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, element.metadata);
+              // _addSongWizard(newItem);
+              // TODO: Add song to downloader
+            }
+          });
+          setState(() {});
+        }),
+        // Expanded(child: TextField(decoration: InputDecoration(
+        //   border: InputBorder.none,
+        //   hintText: 'Search'
+        // )))
       ]),
       Expanded(
         child: SizedBox(
@@ -653,6 +666,30 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
   }
 
+  Future<void> _syncItem(id, status, progress) async {
+    // Check if download is finished
+    if(status.toString() == 'DownloadTaskStatus(3)') {
+      DownloadThing downloadThing = downloadTracker[id];
+      for (var i = 0; i < mStreamAudio.playlist.length; i++) {
+        if(mStreamAudio.playlist[i].server.url == downloadThing.serverUrl && mStreamAudio.playlist[i].path == downloadThing.downloadDirectory) {
+          String downloadDirectory = mStreamAudio.playlist[i].server.localname + mStreamAudio.playlist[i].path;
+          final dir = await getApplicationDocumentsDirectory();
+          String finalString = '${dir.path}/media/${downloadDirectory}';
+          setState(() {
+            mStreamAudio.playlist[i].localFile = finalString; //            
+          });
+        }
+      }
+    }
+  }
+
+  _handleDownloader() {
+    FlutterDownloader.registerCallback((id, status, progress) {
+      print('Download task ($id) is in status ($status) and process ($progress)');
+      _syncItem(id, status, progress);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -661,12 +698,13 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     redrawPlaylistFlag.addListener(_setState);
     mStreamAudio.setFlag(redrawPlaylistFlag);
     // mStreamAudio.setFlag2(positionBar);
+    _handleDownloader();
 
     // Load Servers
     readServerList().then((List contents) {
       // contents = []; // This line will reset the server list to empty on boot
       contents.forEach((f) {
-        var newServer = Server.fromJson(f);
+        Server newServer = Server.fromJson(f);
         setState(() {
           serverList.add(newServer);
         });
@@ -686,17 +724,36 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         });
       }
     });
-
-    syncUtil.initBasic();
   }
 
+  Future<void> downloadOneFile(Server serverObj, String serverPath) async {
+    // download each file relative to its path
+    String downloadUrl = serverObj.url + '/media' + serverPath + '?token=' + serverObj.jwt;
+    String downloadDirectory = serverObj.localname + serverPath;
+    final dir = await getApplicationDocumentsDirectory();
+
+    String lol =  path.dirname( '${dir.path}/media/${downloadDirectory}' );
+    String filename = path.basename( '${dir.path}/media/${downloadDirectory}' );
+    new Directory(lol).createSync(recursive: true);
+    Uri url = Uri.parse(downloadUrl);
+
+    final taskId = await FlutterDownloader.enqueue(
+      url: url.toString(),
+      fileName: filename,
+      savedDir: lol,
+      showNotification: false, // show download progress in status bar (for Android)
+      openFileFromNotification: false, // click on notification to open downloaded file (for Android)
+    );
+
+    downloadTracker[taskId] = new DownloadThing(serverObj.url, null, serverPath);
+  }
 
   @override
   void dispose() {
     _tabController.dispose();
     redrawServerFlag.dispose();
     redrawPlaylistFlag.dispose();
-    syncUtil.disposeBasic();
+    FlutterDownloader.registerCallback(null);
     super.dispose();
   }
 
