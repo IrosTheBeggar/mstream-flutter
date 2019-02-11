@@ -65,6 +65,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   String localFilePath;
 
   _getSongMetadata(QueueItem song) async {
+    if(song.server == null) {
+      return;
+    }
+
     Uri currentUri = Uri.parse(song.server.url);
     String url = currentUri.resolve('/db/metadata').toString();
     var response = await http.post(url ,body: {'filepath':song.path},  headers: { 'x-access-token': song.server.jwt});
@@ -81,14 +85,15 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
   // TODO: This really shouldn't be asynced
   _addSongWizard(QueueItem song) async {
-    // Check for song locally
-    String downloadDirectory = song.server.localname + song.path;
-    final dir = await getApplicationDocumentsDirectory();
-    String finalString = '${dir.path}/media/${downloadDirectory}';
+    if(song.server != null) {
+      // Check for song locally
+      String downloadDirectory = song.server.localname + song.path;
+      final dir = await getApplicationDocumentsDirectory();
+      String finalString = '${dir.path}/media/${downloadDirectory}';
 
-    if (new File(finalString).existsSync() == true) {
-      print(finalString);
-      song.localFile = finalString;
+      if (new File(finalString).existsSync() == true) {
+        song.localFile = finalString;
+      }
     }
 
     mStreamAudio.addSong(song);
@@ -139,7 +144,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               IconButton(icon: Icon(Icons.sync), onPressed: () {
                 // Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
                 for (var i = 0; i < mStreamAudio.playlist.length; i++) {
-                  if(mStreamAudio.playlist[i].localFile == null) {
+                  if(mStreamAudio.playlist[i].localFile == null && mStreamAudio.playlist[i].server != null) {
                     downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path);
                   }
                 }
@@ -189,7 +194,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     icon: Icons.sync,
                     caption: 'SYNC',
                     onTap: () {
-                      downloadOneFile(mStreamAudio.playlist[index].server, mStreamAudio.playlist[index].path);
+                      if(mStreamAudio.playlist[index].server != null) {
+                        downloadOneFile(mStreamAudio.playlist[index].server, mStreamAudio.playlist[index].path);
+                      }
                     },
                   ),
                   IconSlideAction(
@@ -279,17 +286,19 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               Uri url = Uri.parse(element.server.url + '/media' + element.data + '?token=' + element.server.jwt );
               QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, element.metadata);
               _addSongWizard(newItem);
+            }else if (element.type == 'localFile') {
+              QueueItem newItem = new QueueItem(null, element.name, null, null, null);
+              newItem.localFile = element.data;
+                _addSongWizard(newItem);
             }
+            setState(() { });
           });
           setState(() {});
         }),
         new IconButton(icon: Icon(Icons.sync), tooltip: 'Sync All', onPressed: () {
           displayList.forEach((element) {
             if (element.type == 'file') {
-              // Uri url = Uri.parse(element.server.url + '/media' + element.data + '?token=' + element.server.jwt );
-              // QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, element.metadata);
-              // _addSongWizard(newItem);
-              // TODO: Add song to downloader
+              downloadOneFile(element.server, element.data);
             }
           });
           setState(() {});
@@ -312,12 +321,20 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 onTap: () {
                   if(displayList[index].type == 'file') {
                     Uri url = Uri.parse(displayList[index].server.url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
-                    MusicMetadata met = displayList[index].metadata;
                     QueueItem newItem = new QueueItem(displayList[index].server, displayList[index].name, url.toString(), displayList[index].data, displayList[index].metadata);
                     
                     setState(() {
                       _addSongWizard(newItem);
                     });
+                  }
+
+                  if(displayList[index].type == 'localFile') {
+                    QueueItem newItem = new QueueItem(null, displayList[index].name, null, null, null);
+                    newItem.localFile = displayList[index].data;
+                    setState(() {
+                      _addSongWizard(newItem);
+                    });
+                    return;
                   }
 
                   // TODO: Replace all this with a switch statment
@@ -982,7 +999,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                           mStreamAudio.toggleShuffle();
                         });
                       }),
-                      IconButton(icon: Icon(Icons.speaker), onPressed: () {},),
+                      // IconButton(icon: Icon(Icons.speaker), onPressed: () {},),
                     ]
                   ),
                 ],
@@ -1285,8 +1302,12 @@ class AboutScreen extends StatelessWidget {
           children: [
             new Image(image: AssetImage('graphics/mstream-logo.png')),
             new Container(height: 15,),
-            new Text('mStream Mobile v0.1',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-            new Text('Alpha Edition',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            new Text('mStream Mobile v0.4',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            new Text('Beta Edition',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            new Container(height: 45,),
+            new Text('Developed By:',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            new Text('Paul Sori',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            new Text('paul@mstream.io',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
           ]
         )
       )

@@ -20,16 +20,10 @@ Currently Flutter does not have a way to handle background audio for iOS.  If yo
 * Redo UI to add a new server
 
 ## Sync Features
-Basic File syncing is implemented.  There's a lot to do to make it a seamless user experience though
-
-* Play local files from the local file explorer
-* Sync Album
-* Sync Playlist
-* Sync Artists
-* Sync Folder
 * Better UI for letting the user know which songs are synced
 * Compress files for syncing (low priority)
 * Highlight songs in explorer if they are synced (low priority)
+* Download progress bar (low priority)
 
 ### Extra Low Priority
 * Clicking on the cloud button before adding a server throws an exception (only happens on emulators)
