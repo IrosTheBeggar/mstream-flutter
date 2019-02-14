@@ -1,4 +1,4 @@
-package com.example.mstreamflutter;
+package mstream.music;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;
