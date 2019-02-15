@@ -1365,7 +1365,7 @@ class AboutScreen extends StatelessWidget {
           children: [
             new Image(image: AssetImage('graphics/mstream-logo.png')),
             new Container(height: 15,),
-            new Text('mStream Mobile v0.4',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            new Text('mStream Mobile v0.5',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
             new Text('Beta Edition',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
             new Container(height: 45,),
             new Text('Developed By:',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
