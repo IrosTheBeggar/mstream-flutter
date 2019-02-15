@@ -22,7 +22,7 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 typedef void OnError(Exception exception);
 
 // Sync Stuff
-Map downloadTracker = {};
+Map<String, DownloadThing> downloadTracker = {};
 
 final List<List<DisplayItem>> displayCache = new List();
 final List<DisplayItem> displayList = new List();
@@ -142,10 +142,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
               }),
               IconButton(icon: Icon(Icons.sync), onPressed: () {
-                // Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
                 for (var i = 0; i < mStreamAudio.playlist.length; i++) {
                   if(mStreamAudio.playlist[i].localFile == null && mStreamAudio.playlist[i].server != null) {
-                    downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path);
+                    downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path, queueItem: mStreamAudio.playlist[i]);
                   }
                 }
               }),
@@ -195,7 +194,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     caption: 'SYNC',
                     onTap: () {
                       if(mStreamAudio.playlist[index].server != null) {
-                        downloadOneFile(mStreamAudio.playlist[index].server, mStreamAudio.playlist[index].path);
+                        downloadOneFile(mStreamAudio.playlist[index].server, mStreamAudio.playlist[index].path, queueItem: mStreamAudio.playlist[index]);
                       }
                     },
                   ),
@@ -237,24 +236,42 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                       });
                     },
                   ),
-                  // SlideAction(
-                  //   child: new Text('data'),
-                  //   color: Colors.blueGrey,
-                  //   closeOnTap: false,
-                  //   //onTap: () => removeLocation(location),
-                  // ),
                 ],
                 child: Container(
                   color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
-                  child: new ListTile(
-                    leading: mStreamAudio.playlist[index].getImage(),
-                    title: mStreamAudio.playlist[index].getText(),
-                    subtitle: mStreamAudio.playlist[index].getSubText(),
-                    onTap: () {
-                      setState(() {
-                        mStreamAudio.goToSongAtPosition(index);
-                      });
-                    }
+                  child: IntrinsicHeight(
+                    child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Container(
+                            width: 4,
+                            child: 
+                            RotatedBox(
+                              quarterTurns: 3,
+                              child: 
+                              LinearProgressIndicator(
+                                value: mStreamAudio.playlist[index].localFile != null ? 1 : mStreamAudio.playlist[index].downloadProgress/100,
+                                valueColor: new AlwaysStoppedAnimation(Colors.blue),
+                                backgroundColor: Colors.white.withOpacity(0),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              child: new ListTile(
+                                leading: mStreamAudio.playlist[index].getImage(),
+                                title: mStreamAudio.playlist[index].getText(),
+                                subtitle: mStreamAudio.playlist[index].getSubText(),
+                                onTap: () {
+                                  setState(() {
+                                    mStreamAudio.goToSongAtPosition(index);
+                                  });
+                                }
+                              )
+                            )
+                          )
+                        ]
+                      )
                   )
                 )
               );
@@ -298,7 +315,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         new IconButton(icon: Icon(Icons.sync), tooltip: 'Sync All', onPressed: () {
           displayList.forEach((element) {
             if (element.type == 'file') {
-              downloadOneFile(element.server, element.data);
+              downloadOneFile(element.server, element.data, displayItem: element);
             }
           });
           setState(() {});
@@ -313,79 +330,103 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           child: new ListView.builder( // LOL Holy Shit: https://stackoverflow.com/questions/52801201/flutter-renderbox-was-not-laid-out
             physics: const AlwaysScrollableScrollPhysics (),
             itemCount: displayList.length,
-            itemBuilder: (BuildContext context, int index) {
-              return new ListTile(
-                leading: displayList[index].icon == null ? null : displayList[index].icon,
-                title: displayList[index].getText(),
-                subtitle: displayList[index].getSubText(),
-                onTap: () {
-                  if(displayList[index].type == 'file') {
-                    Uri url = Uri.parse(displayList[index].server.url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
-                    QueueItem newItem = new QueueItem(displayList[index].server, displayList[index].name, url.toString(), displayList[index].data, displayList[index].metadata);
-                    
-                    setState(() {
-                      _addSongWizard(newItem);
-                    });
-                  }
+            itemBuilder: (BuildContext context, int index) { // TODO: WOOOOOOOOOOOOOOOOOOOOO
+              return Container(
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Container(
+                        width: 4,
+                        child: 
+                        RotatedBox(
+                          quarterTurns: 3,
+                          child: 
+                          LinearProgressIndicator(
+                            value: displayList[index].downloadProgress/100,
+                            valueColor: new AlwaysStoppedAnimation(Colors.blue),
+                            backgroundColor: Colors.white.withOpacity(0),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: ListTile(
+                          leading: displayList[index].icon == null ? null : displayList[index].icon,
+                          title: displayList[index].getText(),
+                          subtitle: displayList[index].getSubText(),
+                          onTap: () {
+                            if(displayList[index].type == 'file') {
+                              Uri url = Uri.parse(displayList[index].server.url + '/media' + displayList[index].data + '?token=' + serverList[currentServer].jwt );
+                              QueueItem newItem = new QueueItem(displayList[index].server, displayList[index].name, url.toString(), displayList[index].data, displayList[index].metadata);
+                              
+                              setState(() {
+                                _addSongWizard(newItem);
+                              });
+                            }
 
-                  if(displayList[index].type == 'localFile') {
-                    QueueItem newItem = new QueueItem(null, displayList[index].name, null, null, null);
-                    newItem.localFile = displayList[index].data;
-                    setState(() {
-                      _addSongWizard(newItem);
-                    });
-                    return;
-                  }
+                            if(displayList[index].type == 'localFile') {
+                              QueueItem newItem = new QueueItem(null, displayList[index].name, null, null, null);
+                              newItem.localFile = displayList[index].data;
+                              setState(() {
+                                _addSongWizard(newItem);
+                              });
+                              return;
+                            }
 
-                  // TODO: Replace all this with a switch statment
+                            // TODO: Replace all this with a switch statment
 
-                  if( displayList[index].type == 'localDirectory') {
-                    getLocalFiles(displayList[index].data);
-                    return;
-                  }
+                            if( displayList[index].type == 'localDirectory') {
+                              getLocalFiles(displayList[index].data);
+                              return;
+                            }
 
-                  if(displayList[index].type == 'album') {
-                    getAlbumSongs(displayList[index].data, useThisServer: displayList[index].server);
-                    return;
-                  }
+                            if(displayList[index].type == 'album') {
+                              getAlbumSongs(displayList[index].data, useThisServer: displayList[index].server);
+                              return;
+                            }
 
-                  if(displayList[index].type == 'artist') {
-                    getArtistAlbums(displayList[index].data, useThisServer: displayList[index].server);
-                    return;
-                  }
+                            if(displayList[index].type == 'artist') {
+                              getArtistAlbums(displayList[index].data, useThisServer: displayList[index].server);
+                              return;
+                            }
 
-                  if(displayList[index].type == 'directory') {
-                    getFileList(displayList[index].data, useThisServer: displayList[index].server);
-                    return;
-                  }
+                            if(displayList[index].type == 'directory') {
+                              getFileList(displayList[index].data, useThisServer: displayList[index].server);
+                              return;
+                            }
 
-                  if(displayList[index].type == 'addServer') {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
-                    return;
-                  }
+                            if(displayList[index].type == 'addServer') {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
+                              return;
+                            }
 
-                  if(displayList[index].type == 'playlist') {
-                    getPlaylist(displayList[index].data, useThisServer: displayList[index].server);
-                    return;
-                  }
+                            if(displayList[index].type == 'playlist') {
+                              getPlaylist(displayList[index].data, useThisServer: displayList[index].server);
+                              return;
+                            }
 
-                  if(displayList[index].type == 'execAction' && displayList[index].data =='fileExplorer') {
-                    getFileList("", wipeBackCache: false, useThisServer: displayList[index].server);
-                    return;
-                  }
-                  if(displayList[index].type == 'execAction' && displayList[index].data =='playlists') {
-                    getPlaylists(wipeBackCache: false, useThisServer: displayList[index].server);
-                    return;
-                  }
-                  if(displayList[index].type == 'execAction' && displayList[index].data =='artists') {
-                    getArtists(wipeBackCache: false, useThisServer: displayList[index].server);
-                    return;
-                  }
-                  if(displayList[index].type == 'execAction' && displayList[index].data =='albums') {
-                    getAllAlbums(wipeBackCache: false, useThisServer: displayList[index].server);
-                    return;
-                  }
-                },
+                            if(displayList[index].type == 'execAction' && displayList[index].data =='fileExplorer') {
+                              getFileList("", wipeBackCache: false, useThisServer: displayList[index].server);
+                              return;
+                            }
+                            if(displayList[index].type == 'execAction' && displayList[index].data =='playlists') {
+                              getPlaylists(wipeBackCache: false, useThisServer: displayList[index].server);
+                              return;
+                            }
+                            if(displayList[index].type == 'execAction' && displayList[index].data =='artists') {
+                              getArtists(wipeBackCache: false, useThisServer: displayList[index].server);
+                              return;
+                            }
+                            if(displayList[index].type == 'execAction' && displayList[index].data =='albums') {
+                              getAllAlbums(wipeBackCache: false, useThisServer: displayList[index].server);
+                              return;
+                            }
+                          },
+                        )
+                      )
+                    ]
+                  )
+                )
               );
             }
           )
@@ -683,21 +724,34 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _syncItem(id, status, progress) async {
+  Future<void> _syncItem(String id, DownloadTaskStatus status, int progress) async {
     // Check if download is finished
+    DownloadThing downloadThing = downloadTracker[id];
     if(status.toString() == 'DownloadTaskStatus(3)') {
-      DownloadThing downloadThing = downloadTracker[id];
       for (var i = 0; i < mStreamAudio.playlist.length; i++) {
         if(mStreamAudio.playlist[i].server.url == downloadThing.serverUrl && mStreamAudio.playlist[i].path == downloadThing.downloadDirectory) {
           String downloadDirectory = mStreamAudio.playlist[i].server.localname + mStreamAudio.playlist[i].path;
           final dir = await getApplicationDocumentsDirectory();
           String finalString = '${dir.path}/media/${downloadDirectory}';
           setState(() {
-            mStreamAudio.playlist[i].localFile = finalString; //            
+            mStreamAudio.playlist[i].localFile = finalString;
           });
         }
       }
+    }else {
+      if(downloadThing.referenceQueueItem != null) {
+        setState(() {
+          downloadThing.referenceQueueItem.downloadProgress = progress;          
+        });
+      }
+      if(downloadThing.referenceDisplayItem != null) {
+        setState(() {
+          downloadThing.referenceDisplayItem.downloadProgress = progress;          
+        });
+      }
     }
+
+    // Update the tracker
   }
 
   _handleDownloader() {
@@ -743,7 +797,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     });
   }
 
-  Future<void> downloadOneFile(Server serverObj, String serverPath) async {
+  Future<void> downloadOneFile(Server serverObj, String serverPath, { QueueItem queueItem, DisplayItem displayItem }) async {
     // download each file relative to its path
     String downloadUrl = serverObj.url + '/media' + serverPath + '?token=' + serverObj.jwt;
     String downloadDirectory = serverObj.localname + serverPath;
@@ -754,7 +808,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     new Directory(lol).createSync(recursive: true);
     Uri url = Uri.parse(downloadUrl);
 
-    final taskId = await FlutterDownloader.enqueue(
+    String taskId = await FlutterDownloader.enqueue(
       url: url.toString(),
       fileName: filename,
       savedDir: lol,
@@ -763,6 +817,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     );
 
     downloadTracker[taskId] = new DownloadThing(serverObj.url, null, serverPath);
+    if(queueItem != null) {
+      downloadTracker[taskId].referenceQueueItem = queueItem;
+    }
+    if(displayItem != null) {
+      downloadTracker[taskId].referenceDisplayItem = displayItem;
+    }
   }
 
   @override
@@ -946,6 +1006,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              Container(
+                height: 8,
+              ),
               GestureDetector(
                 onTapUp: (TapUpDetails details) {
                   var distance = details;
@@ -959,8 +1022,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     value: mStreamAudio.currentTime != null && mStreamAudio.currentTime.inMilliseconds > 0 && mStreamAudio.getDuration().inMilliseconds > 0
                             ? mStreamAudio.currentTime.inMilliseconds /mStreamAudio.getDuration().inMilliseconds
                             : 0.0,
-                    // value: positionBar.value,
-                    valueColor: new AlwaysStoppedAnimation(Colors.grey[300]),
+                    backgroundColor: Colors.grey[300],
+                    valueColor: new AlwaysStoppedAnimation(Colors.blue),
                   ),
                 ),
               ),

@@ -2,8 +2,6 @@ import 'package:uuid/uuid.dart';
 import 'server.dart';
 import 'metadata.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 var uuid = new Uuid();
 
@@ -16,6 +14,8 @@ class QueueItem {
   int tempRating;  // For handling rating changes
   bool err = false;
   final String uuidString = uuid.v4();
+
+  int downloadProgress = 0;
   String localFile;
 
   Widget getImage() {
@@ -28,10 +28,6 @@ class QueueItem {
 
   Widget getText() {
     String isCachedLocally = '';
-    if(localFile != null) {
-      isCachedLocally = '*';
-    }
-
     if(metadata != null && metadata.title != null) {
       return Text(isCachedLocally + metadata.title);
     }

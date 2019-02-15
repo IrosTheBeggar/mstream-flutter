@@ -12,6 +12,8 @@ class DisplayItem {
   Icon icon;
   MusicMetadata metadata;
 
+  int downloadProgress = 0;
+
   Widget getText() {
     if(metadata != null && metadata.title != null) {
       return Text(metadata.title);
