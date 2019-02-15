@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'server.dart';
 import 'metadata.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class DisplayItem {
   final Server server;
@@ -31,7 +33,17 @@ class DisplayItem {
     return null;
   }
 
-  DisplayItem(this.server, this.name, this.type, this.data, this.icon, this.subtext);
+  DisplayItem(this.server, this.name, this.type, this.data, this.icon, this.subtext){
+    if(this.type == 'file') {
+      String downloadDirectory = this.server.localname + this.data;
+      getApplicationDocumentsDirectory().then((dir) {
+        String finalString = '${dir.path}/media/${downloadDirectory}';
+        if (new File(finalString).existsSync() == true) {
+          this.downloadProgress = 100;
+        }
+      });
+    }
+  }
 
   DisplayItem.fromJson(Map<String, dynamic> json)
     : name = json['name'],
