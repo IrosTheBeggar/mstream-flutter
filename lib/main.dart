@@ -16,6 +16,7 @@ import 'objects/queue_item.dart';
 import 'objects/metadata.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:smooth_star_rating/smooth_star_rating.dart'; 
+import 'package:qrcode_reader/qrcode_reader.dart';
 
 import 'package:flutter_downloader/flutter_downloader.dart';
 
