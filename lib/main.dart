@@ -8,7 +8,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'objects/server.dart';
 import 'objects/download_thing.dart';
 import 'objects/display_item.dart';
-
 import 'package:path/path.dart' as path;
 
 import 'mstream_player.dart';
@@ -1091,16 +1090,17 @@ class MyCustomFormState extends State<MyCustomForm> {
   // us to validate the form
   // Note: This is a GlobalKey<FormState>, not a GlobalKey<MyCustomFormState>!
   final _formKey = GlobalKey<FormState>();
-  String _url;
-  String _username;
-  String _password;
-  String _serverName;
-  String _localName;
   bool _isUpdate = false;
   Directory useThisDir;
 
+  TextEditingController _urlCtrl = new TextEditingController();
+  TextEditingController _usernameCtrl = new TextEditingController();
+  TextEditingController _passwordCtrl = new TextEditingController();
+  TextEditingController _serverNameCtrl = new TextEditingController();
+  TextEditingController _localNameCtrl = new TextEditingController();
+
   checkServer() async {
-    Uri lol = Uri.parse(this._url);
+    Uri lol = Uri.parse(this._urlCtrl.text);
     String origin = lol.origin;
     var response;
     String thisUrl = lol.resolve('/ping').toString();
@@ -1121,7 +1121,7 @@ class MyCustomFormState extends State<MyCustomForm> {
 
     // Try logging in
     try {
-      response = await http.post(lol.resolve('/login').toString(), body: {"username": this._username, "password": this._password});
+      response = await http.post(lol.resolve('/login').toString(), body: {"username": this._usernameCtrl.text, "password": this._passwordCtrl.text});
     } catch(err) {
       Scaffold.of(context).showSnackBar(SnackBar(content: Text('Failed to Login')));
       return;
@@ -1148,17 +1148,17 @@ class MyCustomFormState extends State<MyCustomForm> {
     }
 
     if(shouldUpdate) {
-      serverList[editThisServer].url = _url;
-      serverList[editThisServer].nickname = _serverName;
-      serverList[editThisServer].password = _password;
-      serverList[editThisServer].username = _username;
+      serverList[editThisServer].url = _urlCtrl.text;
+      serverList[editThisServer].nickname = _serverNameCtrl.text;
+      serverList[editThisServer].password = _passwordCtrl.text;
+      serverList[editThisServer].username = _usernameCtrl.text;
     }else {
-      Server woo = new Server(origin, this._serverName, this._username, this._password, jwt, this._localName);
+      Server woo = new Server(origin, this._serverNameCtrl.text, this._usernameCtrl.text, this._passwordCtrl.text, jwt, this._localNameCtrl.text);
       serverList.add(woo);
 
       // Create server directory
       var file = await getApplicationDocumentsDirectory();
-      String dir = path.join(file.path, 'media/' + this._localName);
+      String dir = path.join(file.path, 'media/' + this._localNameCtrl.text);
       await new Directory(dir).create(recursive: true);
       currentServer = serverList.length - 1;
       redrawServerFlag.value = !redrawServerFlag.value;
@@ -1177,16 +1177,35 @@ class MyCustomFormState extends State<MyCustomForm> {
     });
   }
 
+  Map<String, String> parseQrCode(String qrValue) {
+    if(qrValue[0] != '|') {
+      throw new Error();
+    }
+
+    List<String> explodeArr = qrValue.split("|");
+    if(explodeArr.length < 6) {
+      throw new Error();
+    }
+
+    return {
+      'url': explodeArr[1],
+      'username': explodeArr[2],
+      'password': explodeArr[3],
+      'serverName': explodeArr[4],
+      'pathName': explodeArr[5]
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     // Build a Form widget using the _formKey we created above
     try {
       serverList[editThisServer];
-      _url = serverList[editThisServer].url;
-      _username = serverList[editThisServer].username;
-      _password = serverList[editThisServer].password;
-      _serverName = serverList[editThisServer].nickname;
-      _localName = serverList[editThisServer].localname;
+      _urlCtrl.text = serverList[editThisServer].url;
+      _usernameCtrl.text = serverList[editThisServer].username;
+      _passwordCtrl.text = serverList[editThisServer].password;
+      _serverNameCtrl.text = serverList[editThisServer].nickname;
+      _localNameCtrl.text = serverList[editThisServer].localname;
       _isUpdate = true;
     } catch (err) {
       
@@ -1200,7 +1219,7 @@ class MyCustomFormState extends State<MyCustomForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             TextFormField(
-              initialValue: _url,
+              controller: _urlCtrl,
               validator: (value) {
                 if (value.isEmpty) {
                   return 'Server URL is needed';
@@ -1220,11 +1239,11 @@ class MyCustomFormState extends State<MyCustomForm> {
                 labelText: 'Server URL'
               ),
               onSaved: (String value) {
-                this._url = value;
+                this._urlCtrl.text = value;
               }
             ),
             TextFormField(
-              initialValue: _serverName,
+              controller: _serverNameCtrl,
               validator: (value) {
                 // TODO: Fill in the local name variable here
                 // final newString = value.replaceAllMapped(new RegExp(r'\b\w+\b'), (match) {
@@ -1238,11 +1257,11 @@ class MyCustomFormState extends State<MyCustomForm> {
                 labelText: 'Server Name'
               ),
               onSaved: (String value) {
-                this._serverName = value;
+                this._serverNameCtrl.text = value;
               }
             ),
             TextFormField(
-              initialValue: _username,
+              controller: _usernameCtrl,
               validator: (value) {
 
               },
@@ -1252,11 +1271,11 @@ class MyCustomFormState extends State<MyCustomForm> {
                 labelText: 'Username'
               ),
               onSaved: (String value) {
-                this._username = value;
+                this._usernameCtrl.text = value;
               }
             ),
             TextFormField(
-              initialValue: _password,              
+              controller: _passwordCtrl,              
               validator: (value) {
 
               },
@@ -1266,12 +1285,12 @@ class MyCustomFormState extends State<MyCustomForm> {
                 labelText: 'Password'
               ),
               onSaved: (String value) {
-                this._password = value;
+                this._passwordCtrl.text = value;
               }
             ),
             TextFormField(
-              enabled: (_localName == null) ? true : false,
-              initialValue: _localName,
+              enabled: (_localNameCtrl.text == '') ? true : false,
+              controller: _localNameCtrl,
               validator: (value) {
                if (value.isEmpty) {
                   return 'Local Name is needed to sync files to phone';
@@ -1291,35 +1310,67 @@ class MyCustomFormState extends State<MyCustomForm> {
                 labelText: 'Local Directory Name'
               ),
               onSaved: (String value) {
-                this._localName = value;
+                this._localNameCtrl.text = value;
               }
             ),
-            new Container(
+            Container(
               width: MediaQuery.of(context).size.width,
-              child: new RaisedButton(
-                child: new Text(
-                  'Save',
-                  style: new TextStyle(
-                    color: Colors.white
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  Expanded(child: 
+                    RaisedButton(
+                      color: Colors.blue,
+                      child: Row( 
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.photo_camera, color: Colors.white),
+                          Container(width: 8),
+                          Text('QR Code', style: TextStyle(color: Colors.white)),
+                        ]
+                      ),
+                      onPressed: () {
+                        new QRCodeReader().scan().then((qrValue) {
+                          if(qrValue == null || qrValue == '') {
+                            return;
+                          }
+
+                          try {
+                            Map<String, String> parsedValues = parseQrCode(qrValue);
+                            _urlCtrl.text = parsedValues['url'];
+                            _usernameCtrl.text = parsedValues['username'];
+                            _passwordCtrl.text = parsedValues['password'];
+                            _serverNameCtrl.text = parsedValues['serverName'];
+                            _localNameCtrl.text = parsedValues['pathName'];
+                          } catch(err) {
+                            Scaffold.of(context).showSnackBar(SnackBar(content: Text('Invalid Code')));
+                          }
+                        });
+                      },
+                    ),
                   ),
-                ),
-                onPressed: () {
-                  // Validate will return true if the form is valid, or false if
-                  // the form is invalid.
-                  if (!_formKey.currentState.validate()) {
-                    return;
-                  }
+                  Container(width: 8), // Make a gap between the buttons
+                  Expanded(child:
+                    RaisedButton(
+                      color: Colors.green,
+                      child: Text('Save', style: TextStyle(color: Colors.white)),
+                      onPressed: () {
+                        // Validate will return true if the form is valid, or false if
+                        // the form is invalid.
+                        if (!_formKey.currentState.validate()) {
+                          return;
+                        }
 
-                  _formKey.currentState.save(); // Save our form now.
+                        _formKey.currentState.save(); // Save our form now.
 
-                  // Ping server
-                  checkServer();
-                },
-                color: Colors.blue,
+                        // Ping server
+                        checkServer();
+                      },
+                    ),
+                  ),
+                ]
               ),
-              margin: new EdgeInsets.only(
-                top: 20.0
-              ),
+              margin: EdgeInsets.only(top: 20.0),
             ),
           ],
         ),
