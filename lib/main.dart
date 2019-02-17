@@ -1289,7 +1289,7 @@ class MyCustomFormState extends State<MyCustomForm> {
               }
             ),
             TextFormField(
-              enabled: (_localNameCtrl.text == '') ? true : false,
+              enabled: !_isUpdate,
               controller: _localNameCtrl,
               validator: (value) {
                if (value.isEmpty) {
