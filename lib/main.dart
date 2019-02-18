@@ -1097,7 +1097,6 @@ class MyCustomFormState extends State<MyCustomForm> {
   TextEditingController _usernameCtrl = new TextEditingController();
   TextEditingController _passwordCtrl = new TextEditingController();
   TextEditingController _serverNameCtrl = new TextEditingController();
-  TextEditingController _localNameCtrl = new TextEditingController();
 
   checkServer() async {
     Uri lol = Uri.parse(this._urlCtrl.text);
@@ -1153,12 +1152,12 @@ class MyCustomFormState extends State<MyCustomForm> {
       serverList[editThisServer].password = _passwordCtrl.text;
       serverList[editThisServer].username = _usernameCtrl.text;
     }else {
-      Server woo = new Server(origin, this._serverNameCtrl.text, this._usernameCtrl.text, this._passwordCtrl.text, jwt, this._localNameCtrl.text);
+      Server woo = new Server(origin, this._serverNameCtrl.text, this._usernameCtrl.text, this._passwordCtrl.text, jwt, this._serverNameCtrl.text);
       serverList.add(woo);
 
       // Create server directory
       var file = await getApplicationDocumentsDirectory();
-      String dir = path.join(file.path, 'media/' + this._localNameCtrl.text);
+      String dir = path.join(file.path, 'media/' + this._serverNameCtrl.text);
       await new Directory(dir).create(recursive: true);
       currentServer = serverList.length - 1;
       redrawServerFlag.value = !redrawServerFlag.value;
@@ -1205,7 +1204,6 @@ class MyCustomFormState extends State<MyCustomForm> {
       _usernameCtrl.text = serverList[editThisServer].username;
       _passwordCtrl.text = serverList[editThisServer].password;
       _serverNameCtrl.text = serverList[editThisServer].nickname;
-      _localNameCtrl.text = serverList[editThisServer].localname;
       _isUpdate = true;
     } catch (err) {
       
@@ -1243,57 +1241,11 @@ class MyCustomFormState extends State<MyCustomForm> {
               }
             ),
             TextFormField(
+              enabled: !_isUpdate,
               controller: _serverNameCtrl,
               validator: (value) {
-                // TODO: Fill in the local name variable here
-                // final newString = value.replaceAllMapped(new RegExp(r'\b\w+\b'), (match) {
-                //   return '"${match.group(0)}"';
-                // });
-                // print(newString);
-              },
-              keyboardType: TextInputType.emailAddress,
-              decoration: new InputDecoration(
-                hintText: 'Server Name',
-                labelText: 'Server Name'
-              ),
-              onSaved: (String value) {
-                this._serverNameCtrl.text = value;
-              }
-            ),
-            TextFormField(
-              controller: _usernameCtrl,
-              validator: (value) {
-
-              },
-              keyboardType: TextInputType.emailAddress,
-              decoration: new InputDecoration(
-                hintText: 'Username',
-                labelText: 'Username'
-              ),
-              onSaved: (String value) {
-                this._usernameCtrl.text = value;
-              }
-            ),
-            TextFormField(
-              controller: _passwordCtrl,              
-              validator: (value) {
-
-              },
-              obscureText: true, // Use secure text for passwords.
-              decoration: new InputDecoration(
-                hintText: 'Password',
-                labelText: 'Password'
-              ),
-              onSaved: (String value) {
-                this._passwordCtrl.text = value;
-              }
-            ),
-            TextFormField(
-              enabled: !_isUpdate,
-              controller: _localNameCtrl,
-              validator: (value) {
-               if (value.isEmpty) {
-                  return 'Local Name is needed to sync files to phone';
+                if (value.isEmpty) {
+                  return 'Server Name is Required For File Syncing';
                 }
 
                 if(_isUpdate != true) {
@@ -1302,16 +1254,59 @@ class MyCustomFormState extends State<MyCustomForm> {
                   if (new Directory(dir).existsSync() == true) {
                     return 'Pathname Already Exists';
                   }
-                  return RegExp(r"^[\w\-. ]+$").hasMatch(value) ? null : 'No Special Characters';
+                  return RegExp(r"^[a-zA-Z0-9_\- ]*$").hasMatch(value) ? null : 'No Special Characters';
                 }
               },
+              keyboardType: TextInputType.emailAddress,
               decoration: new InputDecoration(
-                hintText: 'Local Directory Name',
-                labelText: 'Local Directory Name'
+                labelText: 'Server Name',
+                hintText: 'A Unique Name'
               ),
               onSaved: (String value) {
-                this._localNameCtrl.text = value;
+                this._serverNameCtrl.text = value;
               }
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  Expanded(child:
+                    TextFormField(
+                      controller: _usernameCtrl,
+                      validator: (value) {
+
+                      },
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: new InputDecoration(
+                        hintText: 'Username',
+                        labelText: 'Username'
+                      ),
+                      onSaved: (String value) {
+                        this._usernameCtrl.text = value;
+                      }
+                    )
+                  ),
+                  Container(width: 8), // Make a gap between the buttons
+                  Expanded(child:
+                    TextFormField(
+                      controller: _passwordCtrl,              
+                      validator: (value) {
+
+                      },
+                      obscureText: true, // Use secure text for passwords.
+                      decoration: new InputDecoration(
+                        hintText: 'Password',
+                        labelText: 'Password'
+                      ),
+                      onSaved: (String value) {
+                        this._passwordCtrl.text = value;
+                      }
+                    )
+                  ),
+
+                ]
+              )
             ),
             Container(
               width: MediaQuery.of(context).size.width,
@@ -1340,8 +1335,9 @@ class MyCustomFormState extends State<MyCustomForm> {
                             _urlCtrl.text = parsedValues['url'];
                             _usernameCtrl.text = parsedValues['username'];
                             _passwordCtrl.text = parsedValues['password'];
-                            _serverNameCtrl.text = parsedValues['serverName'];
-                            _localNameCtrl.text = parsedValues['pathName'];
+                            if(!_isUpdate) {
+                              _serverNameCtrl.text = parsedValues['serverName'];
+                            }
                           } catch(err) {
                             Scaffold.of(context).showSnackBar(SnackBar(content: Text('Invalid Code')));
                           }
