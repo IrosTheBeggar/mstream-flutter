@@ -1182,7 +1182,7 @@ class MyCustomFormState extends State<MyCustomForm> {
     }
 
     List<String> explodeArr = qrValue.split("|");
-    if(explodeArr.length < 6) {
+    if(explodeArr.length < 5) {
       throw new Error();
     }
 
@@ -1190,8 +1190,7 @@ class MyCustomFormState extends State<MyCustomForm> {
       'url': explodeArr[1],
       'username': explodeArr[2],
       'password': explodeArr[3],
-      'serverName': explodeArr[4],
-      'pathName': explodeArr[5]
+      'serverName': explodeArr[4]
     };
   }
 
