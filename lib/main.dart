@@ -330,7 +330,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           child: new ListView.builder( // LOL Holy Shit: https://stackoverflow.com/questions/52801201/flutter-renderbox-was-not-laid-out
             physics: const AlwaysScrollableScrollPhysics (),
             itemCount: displayList.length,
-            itemBuilder: (BuildContext context, int index) { // TODO: WOOOOOOOOOOOOOOOOOOOOO
+            itemBuilder: (BuildContext context, int index) {
               return Container(
                 child: IntrinsicHeight(
                   child: Row(
@@ -937,7 +937,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 leading: new Icon(Icons.folder),
                 title: new Text('File Explorer', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17),),
                 onTap: () {
-                  getFileList("", wipeBackCache: true);
+                  if(serverList.length > 0) {
+                    getFileList("", wipeBackCache: true);
+                  }
                   Navigator.of(context).pop();
                   _tabController.animateTo(0);
                 },
@@ -946,7 +948,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 title: new Text('Playlists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
                 leading: new Icon(Icons.queue_music),
                 onTap: () {
-                  getPlaylists(wipeBackCache: true);
+                  if(serverList.length > 0) {
+                    getPlaylists(wipeBackCache: true);
+                  }
                   Navigator.of(context).pop();
                   _tabController.animateTo(0);
                 },
@@ -955,7 +959,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 title: new Text('Albums', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
                 leading: new Icon(Icons.album),
                 onTap: () {
-                  getAllAlbums(wipeBackCache: true);
+                  if(serverList.length > 0) {
+                    getAllAlbums(wipeBackCache: true);
+                  }
                   Navigator.of(context).pop();
                   _tabController.animateTo(0);
                 },
@@ -964,7 +970,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 title: new Text('Artists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
                 leading: new Icon(Icons.library_music),
                 onTap: () {
-                  getArtists(wipeBackCache: true);
+                  if(serverList.length > 0) {
+                    getArtists(wipeBackCache: true);
+                  }
                   Navigator.of(context).pop();
                   _tabController.animateTo(0);
                 },
