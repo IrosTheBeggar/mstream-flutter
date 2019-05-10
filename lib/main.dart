@@ -261,7 +261,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   ),
                 ],
                 child: Container(
-                  color: (index == mStreamAudio.positionCache) ? Colors.orange : null,
+                  color: (index == mStreamAudio.positionCache) ? Color(0xFFffab00) : null,
                   child: IntrinsicHeight(
                     child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1361,6 +1361,7 @@ class MyCustomFormState extends State<MyCustomForm> {
     }
 
     return Container(
+      color: Color(0xFF3f3f3f),
       padding: EdgeInsets.all(20.0),
       child: Form(
         key: _formKey,
@@ -1459,6 +1460,7 @@ class MyCustomFormState extends State<MyCustomForm> {
                 ]
               )
             ),
+            Container(height: 20,),
             Container(
               width: MediaQuery.of(context).size.width,
               child: Row(
