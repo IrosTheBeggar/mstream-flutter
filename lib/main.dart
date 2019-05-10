@@ -649,7 +649,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       useThisServer = serverList[currentServer];
     }
 
-    var res = await _makeServerCall(useThisServer, '/db/album-songs', {"album": album}, 'POST', wipeBackCache);
+    var res = await _makeServerCall(useThisServer, '/db/album-songs', {"album": album != null ? album : ""}, 'POST', wipeBackCache);
 
     displayList.clear();
     List<DisplayItem> newList = new List();

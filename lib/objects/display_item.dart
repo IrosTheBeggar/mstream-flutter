@@ -21,6 +21,10 @@ class DisplayItem {
       return Text(metadata.title, style: TextStyle(fontFamily: 'Jura', fontSize: 18, color: Colors.black),);
     }
 
+    if(this.name == null && this.type =='album') {
+      return new Text('SINGLES', style: TextStyle(fontFamily: 'Jura', fontSize: 18, color: Colors.black));
+    }
+
     if(type == 'file' || type == 'localFile'){
       return new Text(this.name, style: TextStyle( fontSize: 18, color: Colors.black));      
     }
