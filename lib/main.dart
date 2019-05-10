@@ -130,6 +130,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists', Icon(Icons.queue_music, color: Colors.black), null);
     DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums', Icon(Icons.album, color: Colors.black), null);
     DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists', Icon(Icons.library_music, color: Colors.black), null);
+    DisplayItem newItem5 = new DisplayItem(serverList[currentServer], 'Rated', 'execAction', 'rated', Icon(Icons.star, color: Colors.black), null);
+    DisplayItem newItem6 = new DisplayItem(serverList[currentServer], 'Recent', 'execAction', 'recent', Icon(Icons.query_builder, color: Colors.black), null);
+
     displayList.add(newItem1);
     newList.add(newItem1);
     displayList.add(newItem2);
@@ -138,6 +141,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     newList.add(newItem3);
     displayList.add(newItem4);
     newList.add(newItem4);
+    displayList.add(newItem5);
+    newList.add(newItem5);
+    displayList.add(newItem6);
+    newList.add(newItem6);
+
     displayCache.add(newList);
   }
 
@@ -149,9 +157,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           children: <Widget>[
             Row(
               children: [
-                IconButton(icon: Icon(Icons.save, color: Colors.black,), onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => SavePlaylistScreen()));
-                }),
+                // IconButton(icon: Icon(Icons.save, color: Colors.black,), onPressed: () {
+                //   Navigator.push(context, MaterialPageRoute(builder: (context) => SavePlaylistScreen()));
+                // }),
                 IconButton(icon: Icon(Icons.share, color: Colors.black,), onPressed: () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
                 }),
@@ -429,20 +437,28 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                               return;
                             }
 
-                            if(displayList[index].type == 'execAction' && displayList[index].data =='fileExplorer') {
+                            if(displayList[index].type == 'execAction' && displayList[index].data == 'fileExplorer') {
                               getFileList("", wipeBackCache: false, useThisServer: displayList[index].server);
                               return;
                             }
-                            if(displayList[index].type == 'execAction' && displayList[index].data =='playlists') {
+                            if(displayList[index].type == 'execAction' && displayList[index].data == 'playlists') {
                               getPlaylists(wipeBackCache: false, useThisServer: displayList[index].server);
                               return;
                             }
-                            if(displayList[index].type == 'execAction' && displayList[index].data =='artists') {
+                            if(displayList[index].type == 'execAction' && displayList[index].data == 'artists') {
                               getArtists(wipeBackCache: false, useThisServer: displayList[index].server);
                               return;
                             }
-                            if(displayList[index].type == 'execAction' && displayList[index].data =='albums') {
+                            if(displayList[index].type == 'execAction' && displayList[index].data == 'albums') {
                               getAllAlbums(wipeBackCache: false, useThisServer: displayList[index].server);
+                              return;
+                            }
+                            if(displayList[index].type == 'execAction' && displayList[index].data == 'rated') {
+                              getStarredSongs(wipeBackCache: false, useThisServer: displayList[index].server);
+                              return;
+                            }
+                            if(displayList[index].type == 'execAction' && displayList[index].data == 'recent') {
+                              getRecentSongs(wipeBackCache: false, useThisServer: displayList[index].server);
                               return;
                             }
                           },
@@ -575,6 +591,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       newList.add(new DisplayItem(useThisServer, 'Playlists', 'execAction', 'playlists', Icon(Icons.queue_music, color: Colors.black), null));
       newList.add(new DisplayItem(useThisServer, 'Albums', 'execAction', 'albums', Icon(Icons.album, color: Colors.black), null));
       newList.add(new DisplayItem(useThisServer, 'Artists', 'execAction', 'artists', Icon(Icons.library_music, color: Colors.black), null));
+      newList.add(new DisplayItem(useThisServer, 'Rated', 'execAction', 'rated', Icon(Icons.star, color: Colors.black), null));
+      newList.add(new DisplayItem(useThisServer, 'Recent', 'execAction', 'recent', Icon(Icons.query_builder, color: Colors.black), null));
       displayCache.add(newList);
     }
 
@@ -663,6 +681,62 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       }catch (err) {
 
       }
+      
+      displayList.add(newItem);
+      newList.add(newItem);
+    });
+
+    displayCache.add(newList);
+    setState(() {});
+  }
+
+  Future<void> getStarredSongs({bool wipeBackCache = false, Server useThisServer}) async {
+    setState(() => tabText = 'Albums');
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
+    }
+
+    var res = await _makeServerCall(useThisServer, '/db/get-rated', null, 'GET', wipeBackCache);
+
+    displayList.clear();
+    List<DisplayItem> newList = new List();
+
+    res.forEach((e) {
+      DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note, color: Colors.blue), null);
+      
+      try {
+        e['metadata'];
+        MusicMetadata newMeta = new MusicMetadata(e['metadata']['artist'], e['metadata']['album'], e['metadata']['title'], e['metadata']['track'], null, e['metadata']['year'], e['metadata']['hash'], e['metadata']['rating'], e['metadata']['album-art']);
+        newItem.metadata = newMeta;
+      }catch (err) {}
+      
+      displayList.add(newItem);
+      newList.add(newItem);
+    });
+
+    displayCache.add(newList);
+    setState(() {});
+  }
+
+  Future<void> getRecentSongs({bool wipeBackCache = false, Server useThisServer}) async {
+    setState(() => tabText = 'Albums');
+    if(useThisServer == null) {
+      useThisServer = serverList[currentServer];
+    }
+
+    var res = await _makeServerCall(useThisServer, '/db/recent/added', {"limit": "100"}, 'POST', wipeBackCache);
+
+    displayList.clear();
+    List<DisplayItem> newList = new List();
+
+    res.forEach((e) {
+      DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note, color: Colors.blue), null);
+      
+      try {
+        e['metadata'];
+        MusicMetadata newMeta = new MusicMetadata(e['metadata']['artist'], e['metadata']['album'], e['metadata']['title'], e['metadata']['track'], null, e['metadata']['year'], e['metadata']['hash'], e['metadata']['rating'], e['metadata']['album-art']);
+        newItem.metadata = newMeta;
+      }catch (err) {}
       
       displayList.add(newItem);
       newList.add(newItem);
@@ -922,6 +996,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists', Icon(Icons.queue_music, color: Colors.black), null);
                   DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums', Icon(Icons.album, color: Colors.black), null);
                   DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists', Icon(Icons.library_music, color: Colors.black), null);
+                  DisplayItem newItem5 = new DisplayItem(serverList[currentServer], 'Rated', 'execAction', 'rated', Icon(Icons.star, color: Colors.black), null);
+                  DisplayItem newItem6 = new DisplayItem(serverList[currentServer], 'Recent', 'execAction', 'recent', Icon(Icons.query_builder, color: Colors.black), null);
 
                   displayList.add(newItem1);
                   newList.add(newItem1);
@@ -931,8 +1007,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   newList.add(newItem3);
                   displayList.add(newItem4);
                   newList.add(newItem4);
-                  displayCache.add(newList);
+                  displayList.add(newItem5);
+                  newList.add(newItem5);
+                  displayList.add(newItem6);
+                  newList.add(newItem6);
 
+                  displayCache.add(newList);
                   setState(() {});
               },
               icon: Icon(Icons.cloud),
@@ -1019,7 +1099,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 leading: Icon(Icons.star),
                 onTap: () {
                   if(serverList.length > 0) {
-                    // getAllAlbums(wipeBackCache: true);
+                    getStarredSongs(wipeBackCache: true);
                   }else {
                     _setupStartScreen();
                   }
@@ -1032,7 +1112,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 leading: Icon(Icons.query_builder),
                 onTap: () {
                   if(serverList.length > 0) {
-                    // getAllAlbums(wipeBackCache: true);
+                    getRecentSongs(wipeBackCache: true);
                   }else {
                     _setupStartScreen();
                   }
@@ -1280,8 +1360,8 @@ class MyCustomFormState extends State<MyCustomForm> {
       
     }
 
-    return new Container(
-      padding: new EdgeInsets.all(20.0),
+    return Container(
+      padding: EdgeInsets.all(20.0),
       child: Form(
         key: _formKey,
         child: Column(
@@ -1303,9 +1383,9 @@ class MyCustomFormState extends State<MyCustomForm> {
                 }              
               },
               keyboardType: TextInputType.emailAddress,
-              decoration: new InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'https://mstream.io',
-                labelText: 'Server URL'
+                labelText: 'Server URL',
               ),
               onSaved: (String value) {
                 this._urlCtrl.text = value;
@@ -1349,7 +1429,7 @@ class MyCustomFormState extends State<MyCustomForm> {
 
                       },
                       keyboardType: TextInputType.emailAddress,
-                      decoration: new InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Username',
                         labelText: 'Username'
                       ),
@@ -1366,7 +1446,7 @@ class MyCustomFormState extends State<MyCustomForm> {
 
                       },
                       obscureText: true, // Use secure text for passwords.
-                      decoration: new InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Password',
                         labelText: 'Password'
                       ),
