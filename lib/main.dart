@@ -52,7 +52,20 @@ Future<File> writeServerFile() async {
 }
 
 void main() {
-  runApp(new MaterialApp(home: new ExampleApp()));
+  runApp(new MaterialApp(  
+    title: 'mStream Music',
+    home: new ExampleApp(),
+    theme: ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: Color(0xFF212121),
+      primaryColorDark: Color(0xFF000000),
+      primaryColorLight: Color(0xFF484848),
+      accentColor: Color(0xFFffab00),
+      buttonColor: Color(0xFFFFAB00),
+      scaffoldBackgroundColor: Color(0xFFe1e2e1),
+      cardColor: Color(0xFFffffff)
+    )
+  ));
 }
 
 class ExampleApp extends StatefulWidget {
@@ -113,7 +126,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayCache.clear();
     displayList.clear();
     List<DisplayItem> newList = new List();
-    DisplayItem newItem1 = new DisplayItem(serverList[currentServer], 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null);
+    DisplayItem newItem1 = new DisplayItem(serverList[currentServer], 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder, color: Color(0xFFffab00)), null);
     DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
     DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
     DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
@@ -130,18 +143,18 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
   Widget advanced() {
     return new Column(children: <Widget>[
-      new Row(
+      Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Row(
             children: [
-              IconButton(icon: Icon(Icons.save), onPressed: () {
+              IconButton(icon: Icon(Icons.save, color: Colors.black,), onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => SavePlaylistScreen()));
               }),
-              IconButton(icon: Icon(Icons.share), onPressed: () {
+              IconButton(icon: Icon(Icons.share, color: Colors.black,), onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
               }),
-              IconButton(icon: Icon(Icons.sync), onPressed: () {
+              IconButton(icon: Icon(Icons.sync, color: Colors.black,), onPressed: () {
                 for (var i = 0; i < mStreamAudio.playlist.length; i++) {
                   if(mStreamAudio.playlist[i].localFile == null && mStreamAudio.playlist[i].server != null) {
                     downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path, queueItem: mStreamAudio.playlist[i]);
@@ -285,54 +298,69 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   // Load File Screen
   Widget localFile() {
     return new Column(children: <Widget>[
-      new Row(children: <Widget>[
-        new IconButton(icon: Icon(Icons.arrow_back), tooltip: 'Go Back', onPressed: () {
-          if(displayCache.length > 1) {
-            displayCache.removeLast();
-            displayList.length = 0;
-            List<DisplayItem> newList = displayCache[displayCache.length - 1];
-            newList.forEach((e){
-              displayList.add(e);
-            });
-            setState(() {});
-          }
-        }),
-        new IconButton(icon: Icon(Icons.library_add), tooltip: 'Add All', onPressed: () {
-          displayList.forEach((element) {
-            if (element.type == 'file') {
-              Uri url = Uri.parse(element.server.url + '/media' + element.data + '?token=' + element.server.jwt );
-              QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, element.metadata);
-              _addSongWizard(newItem);
-            }else if (element.type == 'localFile') {
-              QueueItem newItem = new QueueItem(null, element.name, null, null, null);
-              newItem.localFile = element.data;
-                _addSongWizard(newItem);
+      Container(color: Color(0xFFffffff), child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          IconButton(icon: Icon(Icons.keyboard_arrow_left, color: Colors.black), tooltip: 'Go Back', onPressed: () {
+            if(displayCache.length > 1) {
+              displayCache.removeLast();
+              displayList.length = 0;
+              List<DisplayItem> newList = displayCache[displayCache.length - 1];
+              newList.forEach((e){
+                displayList.add(e);
+              });
+              setState(() {});
             }
-            setState(() { });
-          });
-          setState(() {});
-        }),
-        new IconButton(icon: Icon(Icons.sync), tooltip: 'Sync All', onPressed: () {
-          displayList.forEach((element) {
-            if (element.type == 'file') {
-              downloadOneFile(element.server, element.data, displayItem: element);
-            }
-          });
-          setState(() {});
-        }),
-        // Expanded(child: TextField(decoration: InputDecoration(
-        //   border: InputBorder.none,
-        //   hintText: 'Search'
-        // )))
-      ]),
+          }),
+          Row(children: <Widget>[
+            IconButton(icon: Icon(Icons.search, color: Colors.black), onPressed: () {
+
+            }),
+            IconButton(icon: Icon(Icons.sync, color: Colors.black), onPressed: () {
+              displayList.forEach((element) {
+                if (element.type == 'file') {
+                  downloadOneFile(element.server, element.data, displayItem: element);
+                }
+              });
+              setState(() {});
+            }),
+            IconButton(icon: Icon(Icons.library_add, color: Colors.black,), tooltip: 'Add All', onPressed: () {
+              displayList.forEach((element) {
+                if (element.type == 'file') {
+                  Uri url = Uri.parse(element.server.url + '/media' + element.data + '?token=' + element.server.jwt );
+                  QueueItem newItem = new QueueItem(element.server, element.name, url.toString(), element.data, element.metadata);
+                  _addSongWizard(newItem);
+                }else if (element.type == 'localFile') {
+                  QueueItem newItem = new QueueItem(null, element.name, null, null, null);
+                  newItem.localFile = element.data;
+                    _addSongWizard(newItem);
+                }
+                setState(() { });
+              });
+              setState(() {});
+            }),
+            // Expanded(child: TextField(decoration: InputDecoration(
+            //   border: InputBorder.none,
+            //   hintText: 'Search'
+            // )))
+          ])
+        ])
+      ),
+      new Divider(height: 2, color: Color(0xFF484848)),
       Expanded(
         child: SizedBox(
-          child: new ListView.builder( // LOL Holy Shit: https://stackoverflow.com/questions/52801201/flutter-renderbox-was-not-laid-out
+          child: ListView.builder( // LOL Holy Shit: https://stackoverflow.com/questions/52801201/flutter-renderbox-was-not-laid-out
             physics: const AlwaysScrollableScrollPhysics (),
             itemCount: displayList.length,
             itemBuilder: (BuildContext context, int index) {
               return Container(
-                child: IntrinsicHeight(
+                decoration: BoxDecoration(
+                  color: Color(0xFF333333),
+                  border: Border(
+                    bottom: BorderSide(color: Color(0xFF484848))
+                  )
+                ),
+                child: Material(child: InkWell(splashColor: Colors.white, child: IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
@@ -427,7 +455,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     ]
                   )
                 )
-              );
+              )));
             }
           )
         )
@@ -494,7 +522,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           useIcon = new Icon(Icons.music_note);
           type = 'localFile';
         } else {
-          useIcon = new Icon(Icons.folder);
+          useIcon = new Icon(Icons.folder, color: Color(0xFFffab00));
           type = 'localDirectory';
         }
 
@@ -547,7 +575,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     if(wipeBackCache) {
       displayCache.clear();
       List<DisplayItem> newList = new List();
-      newList.add(new DisplayItem(useThisServer, 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null));
+      newList.add(new DisplayItem(useThisServer, 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder, color: Color(0xFFffab00)), null));
       newList.add(new DisplayItem(useThisServer, 'Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
       newList.add(new DisplayItem(useThisServer, 'Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
       newList.add(new DisplayItem(useThisServer, 'Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
@@ -569,7 +597,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     List<DisplayItem> newList = new List();
     res['contents'].forEach((e) {
-      Icon thisIcon = e['type'] == 'directory' ? Icon(Icons.folder) : Icon(Icons.music_note);
+      Icon thisIcon = e['type'] == 'directory' ? Icon(Icons.folder, color: Color(0xFFffab00)) : Icon(Icons.music_note);
       var thisType = (e['type'] == 'directory') ? 'directory' : 'file';
       DisplayItem newItem = new DisplayItem(useThisServer, e['name'], thisType, path.join(res['path'], e['name']), thisIcon, null);
       displayList.add(newItem);
@@ -851,6 +879,15 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
   }
 
+  void _setupStartScreen() {
+    setState(() {
+      tabText = 'Welcome';
+      displayList.clear();
+      displayCache.clear();
+      displayList.add(new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server'));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: Add a status bar to side menu.  Use it to display available space
@@ -858,7 +895,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Color(0xFF212121),
           bottom: TabBar(
+            labelColor: Color(0xFFffab00),
+            indicatorColor: Color(0xFFffab00),
+            unselectedLabelColor: Color(0xFFcccccc),
             tabs: [
               Tab(text: tabText),
               Tab(text: 'Now Playing'),
@@ -869,11 +910,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('mStream',),
+              Text( currentServer < 0 ? 'mStream Music' : serverList[currentServer].nickname),
               Visibility(
                 visible: currentServer < 0 ? false : true,
                 child: Text(
-                  currentServer < 0 ? '' : (serverList[currentServer].nickname.length > 0 ? serverList[currentServer].nickname: serverList[currentServer].url),
+                  currentServer < 0 ? '' : serverList[currentServer].url,
                   style: TextStyle(fontSize: 12.0),
                 ),
               ),
@@ -882,7 +923,6 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           actions: <Widget> [
             new PopupMenuButton(
               onSelected: (Server selectedServer) {
-                // if(currentServer != serverList.indexOf(selectedServer)) {
                   _tabController.animateTo(0);
                   tabText = 'Go To';
                   currentServer = serverList.indexOf(selectedServer);             
@@ -906,98 +946,133 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   displayCache.add(newList);
 
                   setState(() {});
-                // }
               },
-              icon: new Icon(Icons.cloud),
+              icon: Icon(Icons.cloud),
               itemBuilder: (BuildContext context) { 
                 return serverList.map((server) {
-                  return new PopupMenuItem(
+                  return PopupMenuItem(
                     value: server,
-                    child: new Text(server.nickname.length > 0 ? server.nickname : server.url, style: new TextStyle(color: Colors.black)),
+                    child: Text(server.nickname.length > 0 ? server.nickname : server.url, style: new TextStyle(color: Colors.black)),
                   );
                 }).toList();
               },
             ),
-            new IconButton (
-              icon: new Icon(Icons.add),
+            IconButton (
+              icon: Icon(Icons.add),
               onPressed: (){
                 Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()));
               }
             ),
           ]
         ),
-        drawer: new Drawer(
-          child: new ListView(
+        drawer: Drawer(
+          child: ListView(
             physics: const NeverScrollableScrollPhysics(),
             children: <Widget> [
-              new DrawerHeader(
-                child: new Image(image: AssetImage('graphics/mstream-logo.png')),
+              ListTile(
+                title: Text('mStream Music', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 28, color: Color(0xFFffab00)),),
+                onTap: () { },
               ),
-              new ListTile(
-                leading: new Icon(Icons.folder),
-                title: new Text('File Explorer', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17),),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.folder),
+                title: Text('File Explorer', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17),),
                 onTap: () {
                   if(serverList.length > 0) {
                     getFileList("", wipeBackCache: true);
+                  }else {
+                    _setupStartScreen();
                   }
                   Navigator.of(context).pop();
                   _tabController.animateTo(0);
                 },
               ),
-              new ListTile(
-                title: new Text('Playlists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-                leading: new Icon(Icons.queue_music),
+              ListTile(
+                title: Text('Playlists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: Icon(Icons.queue_music),
                 onTap: () {
                   if(serverList.length > 0) {
                     getPlaylists(wipeBackCache: true);
+                  }else {
+                    _setupStartScreen();
                   }
                   Navigator.of(context).pop();
                   _tabController.animateTo(0);
                 },
               ),
-              new ListTile(
-                title: new Text('Albums', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-                leading: new Icon(Icons.album),
-                onTap: () {
-                  if(serverList.length > 0) {
-                    getAllAlbums(wipeBackCache: true);
-                  }
-                  Navigator.of(context).pop();
-                  _tabController.animateTo(0);
-                },
-              ),
-              new ListTile(
-                title: new Text('Artists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-                leading: new Icon(Icons.library_music),
+              ListTile(
+                title: Text('Artists', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: Icon(Icons.library_music),
                 onTap: () {
                   if(serverList.length > 0) {
                     getArtists(wipeBackCache: true);
+                  }else {
+                    _setupStartScreen();
                   }
                   Navigator.of(context).pop();
                   _tabController.animateTo(0);
                 },
               ),
-              new ListTile(
-                title: new Text('Local Files', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-                leading: new Icon(Icons.folder_open),
+              ListTile(
+                title: Text('Albums', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: Icon(Icons.album),
+                onTap: () {
+                  if(serverList.length > 0) {
+                    getAllAlbums(wipeBackCache: true);
+                  }else {
+                    _setupStartScreen();
+                  }
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(0);
+                },
+              ),
+              ListTile(
+                title: Text('Starred', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: Icon(Icons.star),
+                onTap: () {
+                  if(serverList.length > 0) {
+                    // getAllAlbums(wipeBackCache: true);
+                  }else {
+                    _setupStartScreen();
+                  }
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(0);
+                },
+              ),
+              ListTile(
+                title: Text('Recent', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: Icon(Icons.query_builder),
+                onTap: () {
+                  if(serverList.length > 0) {
+                    // getAllAlbums(wipeBackCache: true);
+                  }else {
+                    _setupStartScreen();
+                  }
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(0);
+                },
+              ),
+              Divider(),
+              ListTile(
+                title: Text('Local Files', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: Icon(Icons.folder_open),
                 onTap: () {
                   getLocalFiles(null, wipeBackCache: true);
                   Navigator.of(context).pop();
                   _tabController.animateTo(0);
                 },
               ),
-              new ListTile(
-                title: new Text('Manage Servers', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-                leading: new Icon(Icons.router),
+              ListTile(
+                title: Text('Manage Servers', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: Icon(Icons.router),
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.push(context, MaterialPageRoute(builder: (context) => ManageServersScreen()), );
                 },
               ),
-              new Divider(),
-              new ListTile(
-                title: new Text('About mStream', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-                leading: new Icon(Icons.equalizer),
+              ListTile(
+                title: Text('About mStream', style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+                leading: Icon(Icons.equalizer),
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.push(context, MaterialPageRoute(builder: (context) => AboutScreen()));
@@ -1011,6 +1086,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           controller: _tabController
         ),
         bottomNavigationBar: BottomAppBar(
+          color: Color(0xFF212121),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -1030,8 +1106,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     value: mStreamAudio.currentTime != null && mStreamAudio.currentTime.inMilliseconds > 0 && mStreamAudio.getDuration().inMilliseconds > 0
                             ? mStreamAudio.currentTime.inMilliseconds /mStreamAudio.getDuration().inMilliseconds
                             : 0.0,
-                    backgroundColor: Colors.grey[300],
-                    valueColor: new AlwaysStoppedAnimation(Colors.blue),
+                    backgroundColor: Color(0xFF484848),
+                    valueColor: new AlwaysStoppedAnimation(Color(0xFFc67c00)),
                   ),
                 ),
               ),
@@ -1046,7 +1122,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                           mStreamAudio.previousSong();
                         });
                       }),
-                      IconButton(icon: (mStreamAudio.playing == false) ? Icon(Icons.play_circle_outline) : Icon(Icons.pause_circle_outline), onPressed: () {
+                      IconButton(color: Color(0xFFffab00), icon: (mStreamAudio.playing == false) ? Icon(Icons.play_arrow) : Icon(Icons.pause), onPressed: () {
                         setState(() {
                           mStreamAudio.playPause();
                         });
@@ -1060,12 +1136,12 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   ),
                   Row(
                     children: [            
-                      IconButton(icon: Icon(Icons.repeat, color: (mStreamAudio.shouldLoop == true) ? Colors.lightBlueAccent : Colors.black), onPressed: () {
+                      IconButton(icon: Icon(Icons.repeat, color: (mStreamAudio.shouldLoop == true) ? Colors.blue : Colors.white), onPressed: () {
                         setState(() {
                           mStreamAudio.toggleRepeat();
                         });
                       }),
-                      IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.lightBlueAccent : Colors.black, onPressed: () {
+                      IconButton(icon: Icon(Icons.shuffle), color: (mStreamAudio.shuffle == true) ? Colors.blue : Colors.white, onPressed: () {
                         setState(() {
                           mStreamAudio.toggleShuffle();
                         });
@@ -1414,18 +1490,18 @@ class AboutScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text("About"),
       ),
-      body: new Container(
-        padding: new EdgeInsets.all(40.0),
-        child: new ListView(
+      body: Container(
+        padding: EdgeInsets.all(40.0),
+        child: ListView(
           children: [
-            new Image(image: AssetImage('graphics/mstream-logo.png')),
-            new Container(height: 15,),
-            new Text('mStream Mobile v0.5',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-            new Text('Beta Edition',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-            new Container(height: 45,),
-            new Text('Developed By:',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-            new Text('Paul Sori',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-            new Text('paul@mstream.io',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            Image(image: AssetImage('graphics/mstream-logo.png')),
+            Container(height: 15,),
+            Text('mStream Mobile v0.5',  style: TextStyle(fontFamily: 'Jura', color: Color(0xFF000000), fontWeight: FontWeight.bold, fontSize: 20)),
+            Text('Beta Edition',  style: TextStyle(fontFamily: 'Jura', color: Color(0xFF000000), fontWeight: FontWeight.bold, fontSize: 20)),
+            Container(height: 45,),
+            Text('Developed By:',  style: TextStyle(fontFamily: 'Jura', color: Color(0xFF000000), fontWeight: FontWeight.bold, fontSize: 20)),
+            Text('Paul Sori',  style: TextStyle(fontFamily: 'Jura', color: Color(0xFF000000), fontWeight: FontWeight.bold, fontSize: 20)),
+            Text('paul@mstream.io',  style: TextStyle(fontFamily: 'Jura', color: Color(0xFF000000), fontWeight: FontWeight.bold, fontSize: 20)),
           ]
         )
       )

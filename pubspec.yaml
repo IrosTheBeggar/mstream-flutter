@@ -8,16 +8,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.12.0
-  audioplayers: ^0.9.0
-  flutter_downloader: ^1.1.5
+  http: 0.12.0
+  audioplayers: 0.9.0
+  flutter_downloader: 1.1.5
   path: ^1.6.2
   path_provider: ^0.5.0
   fluttertoast: ^2.2.11
   uuid: ^2.0.0
   flutter_launcher_icons: "^0.7.0"
   flutter_slidable: "^0.4.9"
-  smooth_star_rating: "^1.0.1"
+  smooth_star_rating: "1.0.1"
   qrcode_reader: ^0.4.4
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

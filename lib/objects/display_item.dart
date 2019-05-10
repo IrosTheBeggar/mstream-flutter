@@ -18,17 +18,17 @@ class DisplayItem {
 
   Widget getText() {
     if(metadata != null && metadata.title != null) {
-      return Text(metadata.title);
+      return Text(metadata.title, style: TextStyle(fontFamily: 'Jura', fontSize: 18),);
     }
-    return new Text(this.name);
+    return new Text(this.name, style: TextStyle(fontFamily: 'Jura', fontSize: 18));
   }
 
   Widget getSubText() {
     if(metadata != null && metadata.artist != null) {
-      return Text(metadata.artist);
+      return Text(metadata.artist, style: TextStyle( fontSize: 16),);
     }
     if (subtext != null) {
-      return new Text(this.subtext);
+      return new Text(this.subtext, style: TextStyle( fontSize: 16),);
     }
     return null;
   }

@@ -17,16 +17,16 @@ Currently Flutter does not have a way to handle background audio for iOS.  If yo
 
 ### Low Priority
 * Save/delete/update playlists
-* Auto DJ
 * Search Feature
 * Re-arrange queue / Re-arrange servers
 
 ### Extra Low Priority
-* Clicking on the cloud button before adding a server throws an exception (only happens on emulators)
 * Display Album Art for albums (Image resizing for network images currently sucks)
 * Update all metadata instances after a star rating
 * Download animation doesn't work if you leave and go back in browser
-* Double check all caching code against mStream Webapp
+* Double check all caching code against mStream WebApp
+* Auto DJ
 
 ### Blocked
 * Test that error handling works correctly (waiting on: https://github.com/luanpotter/audioplayers/issues/106)
+* Clicking on the cloud button before adding a server throws an exception (https://github.com/flutter/flutter/issues)
