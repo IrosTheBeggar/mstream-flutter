@@ -23,16 +23,16 @@ class QueueItem {
       // return Image.network('https://picsum.photos/250?image=9');
       // TODO: Image re-sizing sucks right now
     }
-    return new Icon(Icons.music_note);
+    return new Icon(Icons.music_note, color: Colors.black,);
   }
 
   Widget getText() {
     String isCachedLocally = '';
     if(metadata != null && metadata.title != null) {
-      return Text(isCachedLocally + metadata.title);
+      return Text(isCachedLocally + metadata.title, style: TextStyle(fontFamily: 'Jura', fontSize: 18, color: Colors.black),);
     }
 
-    return new Text(isCachedLocally + filename);
+    return new Text(isCachedLocally + filename, style: TextStyle(fontFamily: 'Jura', fontSize: 18, color: Colors.black),);
   }
 
   Widget getSubText() {
@@ -41,9 +41,9 @@ class QueueItem {
     }
 
     if(metadata != null && metadata.artist != null) {
-      return Text(metadata.artist);
+      return Text(metadata.artist, style: TextStyle(color: Colors.black));
     }
-    return null;
+    return Text('');
   }
 
   int getRating() {

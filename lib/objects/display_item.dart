@@ -18,17 +18,21 @@ class DisplayItem {
 
   Widget getText() {
     if(metadata != null && metadata.title != null) {
-      return Text(metadata.title, style: TextStyle(fontFamily: 'Jura', fontSize: 18),);
+      return Text(metadata.title, style: TextStyle(fontFamily: 'Jura', fontSize: 18, color: Colors.black),);
     }
-    return new Text(this.name, style: TextStyle(fontFamily: 'Jura', fontSize: 18));
+
+    if(type == 'file' || type == 'localFile'){
+      return new Text(this.name, style: TextStyle( fontSize: 18, color: Colors.black));      
+    }
+    return new Text(this.name, style: TextStyle(fontFamily: 'Jura', fontSize: 18, color: Colors.black));
   }
 
   Widget getSubText() {
     if(metadata != null && metadata.artist != null) {
-      return Text(metadata.artist, style: TextStyle( fontSize: 16),);
+      return Text(metadata.artist, style: TextStyle( fontSize: 16, color: Colors.black),);
     }
     if (subtext != null) {
-      return new Text(this.subtext, style: TextStyle( fontSize: 16),);
+      return new Text(this.subtext, style: TextStyle( fontSize: 16, color: Colors.black),);
     }
     return null;
   }

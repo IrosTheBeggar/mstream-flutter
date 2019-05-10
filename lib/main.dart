@@ -126,10 +126,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayCache.clear();
     displayList.clear();
     List<DisplayItem> newList = new List();
-    DisplayItem newItem1 = new DisplayItem(serverList[currentServer], 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder, color: Color(0xFFffab00)), null);
-    DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
-    DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
-    DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
+    DisplayItem newItem1 = new DisplayItem(serverList[currentServer], 'File Explorer', 'execAction', 'fileExplorer', Icon(Icons.folder, color: Color(0xFFffab00)), null);
+    DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists', Icon(Icons.queue_music, color: Colors.black), null);
+    DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums', Icon(Icons.album, color: Colors.black), null);
+    DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists', Icon(Icons.library_music, color: Colors.black), null);
     displayList.add(newItem1);
     newList.add(newItem1);
     displayList.add(newItem2);
@@ -143,46 +143,48 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
   Widget advanced() {
     return new Column(children: <Widget>[
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Row(
-            children: [
-              IconButton(icon: Icon(Icons.save, color: Colors.black,), onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => SavePlaylistScreen()));
-              }),
-              IconButton(icon: Icon(Icons.share, color: Colors.black,), onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
-              }),
-              IconButton(icon: Icon(Icons.sync, color: Colors.black,), onPressed: () {
-                for (var i = 0; i < mStreamAudio.playlist.length; i++) {
-                  if(mStreamAudio.playlist[i].localFile == null && mStreamAudio.playlist[i].server != null) {
-                    downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path, queueItem: mStreamAudio.playlist[i]);
+      Container(color: Colors.white, 
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Row(
+              children: [
+                IconButton(icon: Icon(Icons.save, color: Colors.black,), onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => SavePlaylistScreen()));
+                }),
+                IconButton(icon: Icon(Icons.share, color: Colors.black,), onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => ShareScreen()));
+                }),
+                IconButton(icon: Icon(Icons.sync, color: Colors.black,), onPressed: () {
+                  for (var i = 0; i < mStreamAudio.playlist.length; i++) {
+                    if(mStreamAudio.playlist[i].localFile == null && mStreamAudio.playlist[i].server != null) {
+                      downloadOneFile(mStreamAudio.playlist[i].server, mStreamAudio.playlist[i].path, queueItem: mStreamAudio.playlist[i]);
+                    }
                   }
-                }
-              }),
-            ]
-          ),
-          Row(
-            children: [
-              IconButton(icon: Icon(Icons.cancel), color: Colors.redAccent, onPressed: () {
-                setState(() {
-                  mStreamAudio.clearPlaylist();
-                });
-              },),
-            ]
-          )
-        ]
+                }),
+              ]
+            ),
+            Row(
+              children: [
+                IconButton(icon: Icon(Icons.cancel), color: Colors.redAccent, onPressed: () {
+                  setState(() {
+                    mStreamAudio.clearPlaylist();
+                  });
+                },),
+              ]
+            )
+          ]
+        )
       ),
       Expanded(
         child: SizedBox(
-          child: new ListView.builder(
+          child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics (),
             itemCount: mStreamAudio.playlist.length,
             itemBuilder: (BuildContext context, int index) {
               return Slidable(
                 key: Key(mStreamAudio.playlist[index].uuidString),
-                slideToDismissDelegate: new SlideToDismissDrawerDelegate(
+                slideToDismissDelegate: SlideToDismissDrawerDelegate(
                   onDismissed: (actionType) {
                   setState(() {
                     mStreamAudio.removeSongAtPosition(index);
@@ -193,7 +195,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                 actionExtentRatio: 0.18,
                 secondaryActions: <Widget>[
                   SlideAction(
-                    child: new Container(),
+                    child: Container(),
                     color: Colors.grey,
                     closeOnTap: false,
                     //onTap: () => removeLocation(location),
@@ -220,23 +222,23 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            title: new Text("Rate Song"),
+                            title: Text("Rate Song"),
                             content: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
                                 mStreamAudio.playlist[index].getText(),
-                                new RateDialogContent(queueItem: mStreamAudio.playlist[index]),
+                                RateDialogContent(queueItem: mStreamAudio.playlist[index]),
                               ]
                             ),
                             actions: [
-                              new FlatButton(
-                                child: new Text("Go Back"),
+                              FlatButton(
+                                child: Text("Go Back"),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
                               ),
-                              new FlatButton(
-                                child: new Text("Rate Song"),
+                              FlatButton(
+                                child: Text("Rate Song"),
                                 onPressed: () {
                                   // Save
                                   this._rateSong(mStreamAudio.playlist[index]).then((onValue) {
@@ -264,14 +266,14 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                               child: 
                               LinearProgressIndicator(
                                 value: mStreamAudio.playlist[index].localFile != null ? 1 : mStreamAudio.playlist[index].downloadProgress/100,
-                                valueColor: new AlwaysStoppedAnimation(Colors.blue),
+                                valueColor: AlwaysStoppedAnimation(Colors.blue),
                                 backgroundColor: Colors.white.withOpacity(0),
                               ),
                             ),
                           ),
                           Expanded(
                             child: Container(
-                              child: new ListTile(
+                              child: ListTile(
                                 leading: mStreamAudio.playlist[index].getImage(),
                                 title: mStreamAudio.playlist[index].getText(),
                                 subtitle: mStreamAudio.playlist[index].getSubText(),
@@ -297,7 +299,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
   // Load File Screen
   Widget localFile() {
-    return new Column(children: <Widget>[
+    return Column(children: <Widget>[
       Container(color: Color(0xFFffffff), child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
@@ -314,7 +316,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
           }),
           Row(children: <Widget>[
             IconButton(icon: Icon(Icons.search, color: Colors.black), onPressed: () {
-
+              // TODO: 
             }),
             IconButton(icon: Icon(Icons.sync, color: Colors.black), onPressed: () {
               displayList.forEach((element) {
@@ -339,14 +341,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
               });
               setState(() {});
             }),
-            // Expanded(child: TextField(decoration: InputDecoration(
-            //   border: InputBorder.none,
-            //   hintText: 'Search'
-            // )))
           ])
         ])
       ),
-      new Divider(height: 2, color: Color(0xFF484848)),
       Expanded(
         child: SizedBox(
           child: ListView.builder( // LOL Holy Shit: https://stackoverflow.com/questions/52801201/flutter-renderbox-was-not-laid-out
@@ -355,12 +352,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             itemBuilder: (BuildContext context, int index) {
               return Container(
                 decoration: BoxDecoration(
-                  color: Color(0xFF333333),
                   border: Border(
-                    bottom: BorderSide(color: Color(0xFF484848))
+                    bottom: BorderSide(color: Color(0xFFbdbdbd))
                   )
                 ),
-                child: Material(child: InkWell(splashColor: Colors.white, child: IntrinsicHeight(
+                child: Material(color: Color(0xFFe1e2e1), child: InkWell(splashColor: Colors.white, child: IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
@@ -519,7 +515,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
         Icon useIcon;
         String type;
         if (entity is File) {
-          useIcon = new Icon(Icons.music_note);
+          useIcon = new Icon(Icons.music_note, color: Colors.black);
           type = 'localFile';
         } else {
           useIcon = new Icon(Icons.folder, color: Color(0xFFffab00));
@@ -575,10 +571,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     if(wipeBackCache) {
       displayCache.clear();
       List<DisplayItem> newList = new List();
-      newList.add(new DisplayItem(useThisServer, 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder, color: Color(0xFFffab00)), null));
-      newList.add(new DisplayItem(useThisServer, 'Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null));
-      newList.add(new DisplayItem(useThisServer, 'Albums', 'execAction', 'albums',  new Icon(Icons.album), null));
-      newList.add(new DisplayItem(useThisServer, 'Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null));
+      newList.add(new DisplayItem(useThisServer, 'File Explorer', 'execAction', 'fileExplorer', Icon(Icons.folder, color: Color(0xFFffab00)), null));
+      newList.add(new DisplayItem(useThisServer, 'Playlists', 'execAction', 'playlists', Icon(Icons.queue_music, color: Colors.black), null));
+      newList.add(new DisplayItem(useThisServer, 'Albums', 'execAction', 'albums', Icon(Icons.album, color: Colors.black), null));
+      newList.add(new DisplayItem(useThisServer, 'Artists', 'execAction', 'artists', Icon(Icons.library_music, color: Colors.black), null));
       displayCache.add(newList);
     }
 
@@ -597,7 +593,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     List<DisplayItem> newList = new List();
     res['contents'].forEach((e) {
-      Icon thisIcon = e['type'] == 'directory' ? Icon(Icons.folder, color: Color(0xFFffab00)) : Icon(Icons.music_note);
+      Icon thisIcon = e['type'] == 'directory' ? Icon(Icons.folder, color: Color(0xFFffab00)) : Icon(Icons.music_note, color: Colors.blue);
       var thisType = (e['type'] == 'directory') ? 'directory' : 'file';
       DisplayItem newItem = new DisplayItem(useThisServer, e['name'], thisType, path.join(res['path'], e['name']), thisIcon, null);
       displayList.add(newItem);
@@ -620,7 +616,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     List<DisplayItem> newList = new List();
     res['artists'].forEach((e) {
-      DisplayItem newItem = new DisplayItem(useThisServer, e, 'artist', e, Icon(Icons.library_music), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e, 'artist', e, Icon(Icons.library_music, color: Colors.black), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -638,7 +634,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     List<DisplayItem> newList = new List();
     res['albums'].forEach((e) {
-      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'album', e['name'], Icon(Icons.album), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'album', e['name'], Icon(Icons.album, color: Colors.black), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -658,7 +654,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     List<DisplayItem> newList = new List();
     res.forEach((e) {
-      DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note, color: Colors.blue), null);
       
       try {
         e['metadata'];
@@ -687,18 +683,13 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     List<DisplayItem> newList = new List();
     res['albums'].forEach((e) {
-      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'album', e['name'], Icon(Icons.album), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'album', e['name'], Icon(Icons.album, color: Colors.black), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
 
     displayCache.add(newList);
     setState(() {});
-  }
-
-  // TODO: 
-  Future<void> getAllPlaylistsForAllServers() async {
-
   }
 
   Future<void> getPlaylists({bool wipeBackCache = false, Server useThisServer}) async {
@@ -712,7 +703,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     List<DisplayItem> newList = new List();
     res.forEach((e) {
-      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'playlist', e['name'], Icon(Icons.queue_music), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['name'], 'playlist', e['name'], Icon(Icons.queue_music, color: Colors.black), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -730,7 +721,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     displayList.clear();
     List<DisplayItem> newList = new List();
     res.forEach((e) {
-      DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note), null);
+      DisplayItem newItem = new DisplayItem(useThisServer, e['filepath'], 'file', '/' + e['filepath'], Icon(Icons.music_note, color: Colors.blue), null);
       displayList.add(newItem);
       newList.add(newItem);
     });
@@ -796,7 +787,6 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     redrawServerFlag.addListener(_goToNavScreen);
     redrawPlaylistFlag.addListener(_setState);
     mStreamAudio.setFlag(redrawPlaylistFlag);
-    // mStreamAudio.setFlag2(positionBar);
     _handleDownloader();
 
     // Load Servers
@@ -812,13 +802,11 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       if (serverList.length > 0) {
         currentServer = 0;
         _goToNavScreen();
-        // getFileList("");
-        getAllPlaylistsForAllServers();
       } else {
         setState(() {
           tabText = 'Welcome';
           displayList.add(
-            new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server')
+            new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add, color: Colors.black), 'Click here to add server')
           );
         });
       }
@@ -884,7 +872,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       tabText = 'Welcome';
       displayList.clear();
       displayCache.clear();
-      displayList.add(new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server'));
+      displayList.add(new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add, color: Colors.black), 'Click here to add server'));
     });
   }
 
@@ -930,10 +918,10 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                   displayCache.clear();
                   displayList.clear();
                   List<DisplayItem> newList = new List();
-                  DisplayItem newItem1 = new DisplayItem(serverList[currentServer], 'File Explorer', 'execAction', 'fileExplorer',  new Icon(Icons.folder), null);
-                  DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists',  new Icon(Icons.queue_music), null);
-                  DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums',  new Icon(Icons.album), null);
-                  DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists',  new Icon(Icons.library_music), null);
+                  DisplayItem newItem1 = new DisplayItem(serverList[currentServer], 'File Explorer', 'execAction', 'fileExplorer', Icon(Icons.folder, color: Color(0xFFffab00)), null);
+                  DisplayItem newItem2 = new DisplayItem(serverList[currentServer], 'Playlists', 'execAction', 'playlists', Icon(Icons.queue_music, color: Colors.black), null);
+                  DisplayItem newItem3 = new DisplayItem(serverList[currentServer], 'Albums', 'execAction', 'albums', Icon(Icons.album, color: Colors.black), null);
+                  DisplayItem newItem4 = new DisplayItem(serverList[currentServer], 'Artists', 'execAction', 'artists', Icon(Icons.library_music, color: Colors.black), null);
 
                   displayList.add(newItem1);
                   newList.add(newItem1);
@@ -1559,7 +1547,7 @@ class ShareScreenState extends State<ShareScreen> {
 
   Widget _thisScreen() {
     if(mStreamAudio.playlist.length == 0) {
-      return new Text('You don\'t have a plylist to share!',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17));
+      return Text('You don\'t have a playlist to share!',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black));
     }
 
     Widget showThis;
@@ -1578,20 +1566,21 @@ class ShareScreenState extends State<ShareScreen> {
     if(allTheSame == true) {
       showThis = ListView(
         children: [
-          new Text('Shared playlsits expire automaticaly after 14 days',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-          new RaisedButton(
+          Text('Shared playlists expire after 14 days',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black)),
+          Container(height: 40,),
+          RaisedButton(
             padding: const EdgeInsets.all(8.0),
             onPressed: () {
               _callOnPressed();
             },
-            child: new Text(shareButtonText),
+            child: Text(shareButtonText),
           ),
-          new Container(height: 28),
-          new Text(shareLink)
+          Container(height: 28),
+          Text(shareLink, style: TextStyle(fontSize: 16, color: Colors.black))
         ]
       );
     }else {
-      showThis = Text('Your playlist contains mixed server content.\n\nYou cannot share a mixed content playlist for security reasons',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17));
+      showThis = Text('Your playlist contains mixed server content.\n\nYou cannot share a mixed content playlist for security reasons',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black));
     }
 
     return showThis;
@@ -1604,9 +1593,8 @@ class ShareScreenState extends State<ShareScreen> {
       appBar: AppBar(
         title: Text("Share Playlist"),
       ),
-      body: new Container(
-        padding: new EdgeInsets.all(40.0),
-
+      body: Container(
+        padding: EdgeInsets.all(40.0),
         child: _thisScreen()
       )
     );
@@ -1623,23 +1611,23 @@ class SavePlaylistScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text("Save Playlist"),
       ),
-      body: new Container(
-        padding: new EdgeInsets.all(40.0),
-        child: new ListView(
+      body: Container(
+        padding: EdgeInsets.all(40.0),
+        child: ListView(
           children: [
-            new Text('Save Playlist Goes Here',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
-            new DropdownButton(
-              hint: new Text("New Playlist"),
+            Text('Save Playlist Goes Here',  style: TextStyle(fontFamily: 'Jura', fontWeight: FontWeight.bold, fontSize: 17)),
+            DropdownButton(
+              hint: Text("New Playlist"),
               value: null,
               onChanged: (Server newServer) {
                 selectedServer = newServer;
               },
               items: serverList.map((Server server) {
-                return new DropdownMenuItem<Server>(
+                return DropdownMenuItem<Server>(
                   value: server,
-                  child: new Text(
+                  child: Text(
                     server.nickname,
-                    style: new TextStyle(color: Colors.black),
+                    style: TextStyle(color: Colors.black),
                   ),
                 );
               }).toList()
@@ -1671,25 +1659,32 @@ class ManageServersScreenState extends State<ManageServersScreen> {
       appBar: AppBar(
         title: Text("Manage Servers"),
       ),
-      body: new Row(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => AddServerScreen()), );
+        },
+        child: Icon(Icons.add),
+        backgroundColor: Color(0xFFFFAB00),
+      ),
+      body: Row(
         children: [Expanded(
           child: SizedBox(
-            child: new ListView.builder(
+            child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics (),
               itemCount: serverList.length,
               itemBuilder: (BuildContext context, int index) {
-                return new ListTile(
-                  title: Text(serverList[index].nickname),
-                  subtitle:  Text(serverList[index].url),
+                return ListTile(
+                  title: Text(serverList[index].nickname, style: TextStyle(color: Colors.black, fontSize: 18)),
+                  subtitle:  Text(serverList[index].url, style: TextStyle(color: Colors.black),),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children:[
-                      IconButton(icon: Icon(Icons.edit), tooltip: 'Edit Server', onPressed: () {
+                      IconButton(icon: Icon(Icons.edit), color: Color(0xFF212121), tooltip: 'Edit Server', onPressed: () {
                         editThisServer = index;
                         Navigator.push(context, MaterialPageRoute(builder: (context) => EditServerScreen()), );
                       }),
                       IconButton(
-                        icon: Icon(Icons.delete_forever),
+                        icon: Icon(Icons.delete, color: Colors.redAccent,),
                         tooltip: 'Delete Server',
                         onPressed: () { 
                           showDialog(
@@ -1697,20 +1692,20 @@ class ManageServersScreenState extends State<ManageServersScreen> {
                             builder: (BuildContext context) {
                               // return object of type Dialog
                               return AlertDialog(
-                                title: new Text("Confirm Remove Server"),
+                                title: Text("Confirm Remove Server"),
                                 content: Row(children: <Widget>[
-                                  new DeleteServerAlertForm(),
-                                  new Flexible(child: Text("Remove synced files from device?"))
+                                  DeleteServerAlertForm(),
+                                  Flexible(child: Text("Remove synced files from device?"))
                                 ]),
                                 actions: <Widget>[
-                                  new FlatButton(
-                                    child: new Text("Go Back"),
+                                  FlatButton(
+                                    child: Text("Go Back"),
                                     onPressed: () {
                                       Navigator.of(context).pop();
                                     },
                                   ),
-                                  new FlatButton(
-                                    child: new Text("Delete", style: TextStyle(color: Colors.red),),
+                                  FlatButton(
+                                    child: Text("Delete", style: TextStyle(color: Colors.red),),
                                     onPressed: () {
                                       try {
                                         serverList[index];
@@ -1724,7 +1719,7 @@ class ManageServersScreenState extends State<ManageServersScreen> {
                                           tabText = 'Welcome';
                                           displayList.clear();
                                           displayCache.clear();
-                                          displayList.add(new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add), 'Click here to add server'));
+                                          displayList.add(new DisplayItem(null, 'Welcome To mStream', 'addServer', '', Icon(Icons.add, color: Colors.black), 'Click here to add server'));
                                           setState(() {
                                             currentServer = -1;
                                           });
