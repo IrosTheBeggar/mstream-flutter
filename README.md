@@ -30,3 +30,7 @@ Currently Flutter does not have a way to handle background audio for iOS.  If yo
 ### Blocked
 * Test that error handling works correctly (waiting on: https://github.com/luanpotter/audioplayers/issues/106)
 * Clicking on the cloud button before adding a server throws an exception (https://github.com/flutter/flutter/issues)
+
+## Not to self
+
+Make sure to bum version number in `/android/app/build.gradle` before releasing
