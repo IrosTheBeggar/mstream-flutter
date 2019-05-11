@@ -573,7 +573,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
 
     if (response.statusCode > 299) {
       Fluttertoast.showToast(
-        msg: "Call Failed",
+        msg: "Server Call Failed",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.CENTER,
         timeInSecForIos: 1,
@@ -607,6 +607,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     var res = await _makeServerCall(useThisServer, '/dirparser', {"dir": directory}, 'POST', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -630,6 +633,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     var res = await _makeServerCall(useThisServer, '/db/artists', null, 'GET', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -648,6 +654,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       useThisServer = serverList[currentServer];
     }
     var res = await _makeServerCall(useThisServer, '/db/artists-albums', {"artist": artist}, 'POST', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -668,6 +677,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     var res = await _makeServerCall(useThisServer, '/db/album-songs', {"album": album != null ? album : ""}, 'POST', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -697,6 +709,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     var res = await _makeServerCall(useThisServer, '/db/get-rated', null, 'GET', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -725,6 +740,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     var res = await _makeServerCall(useThisServer, '/db/recent/added', {"limit": "100"}, 'POST', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -753,6 +771,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     var res = await _makeServerCall(useThisServer, '/db/albums', null, 'GET', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -773,6 +794,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
     }
 
     var res = await _makeServerCall(useThisServer, '/playlist/getall', null, 'GET', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
@@ -791,6 +815,9 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
       useThisServer = serverList[currentServer];
     }
     var res = await _makeServerCall(useThisServer, '/playlist/load', {"playlistname": playlist}, 'POST', wipeBackCache);
+    if(res == null) {
+      return;
+    }
 
     displayList.clear();
     List<DisplayItem> newList = new List();
