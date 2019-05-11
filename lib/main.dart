@@ -150,8 +150,8 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   }
 
   Widget advanced() {
-    return new Column(children: <Widget>[
-      Container(color: Colors.white, 
+    return Column(children: <Widget>[
+      Material(color: Colors.white, 
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
@@ -174,7 +174,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
             ),
             Row(
               children: [
-                IconButton(icon: Icon(Icons.cancel), color: Colors.redAccent, onPressed: () {
+                IconButton(splashColor: Colors.red, icon: Icon(Icons.cancel), color: Colors.redAccent, onPressed: () {
                   setState(() {
                     mStreamAudio.clearPlaylist();
                   });
@@ -308,7 +308,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
   // Load File Screen
   Widget localFile() {
     return Column(children: <Widget>[
-      Container(color: Color(0xFFffffff), child: Row(
+      Material(color:Color(0xFFffffff),  child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           IconButton(icon: Icon(Icons.keyboard_arrow_left, color: Colors.black), tooltip: 'Go Back', onPressed: () {
@@ -364,7 +364,7 @@ class _ExampleAppState extends State<ExampleApp> with SingleTickerProviderStateM
                     bottom: BorderSide(color: Color(0xFFbdbdbd))
                   )
                 ),
-                child: Material(color: Color(0xFFe1e2e1), child: InkWell(splashColor: Colors.white, child: IntrinsicHeight(
+                child: Material(color: Color(0xFFe1e2e1), child: InkWell(splashColor: Colors.blue, child: IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
